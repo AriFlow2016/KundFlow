@@ -1,47 +1,35 @@
 import React from 'react';
-import { Customer } from '../../types/customer';
-import CustomerBasicInfo from './sections/CustomerBasicInfo';
-import CustomerContacts from './sections/CustomerContacts';
-import { CustomerContracts } from './sections/CustomerContracts';
-import CustomerCases from './sections/CustomerCases';
-import CustomerActivities from './sections/CustomerActivities';
-import CustomerTasks from './sections/CustomerTasks';
+import { Link } from 'react-router-dom';
+import { Customer, CustomerType } from '../../types/customer';
+import { FaBuilding, FaUser } from 'react-icons/fa';
 
 interface CustomerCardProps {
   customer: Customer;
-  onUpdate: (customer: Customer) => void;
-  onClose?: () => void;
 }
 
-export const CustomerCard: React.FC<CustomerCardProps> = ({ customer, onUpdate, onClose }) => {
+export const CustomerCard: React.FC<CustomerCardProps> = ({ customer }) => {
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div className="relative top-20 mx-auto p-5 border w-4/5 shadow-lg rounded-md bg-white">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold text-gray-900">
-            {customer.name || 'Kunddetaljer'}
-          </h2>
-          {onClose && (
-            <button
-              onClick={onClose}
-              className="text-gray-500 hover:text-gray-700"
-              aria-label="Stäng"
-            >
-              <FaTimes className="h-5 w-5" />
-            </button>
-          )}
-        </div>
-
-        <div className="space-y-6">
-          <CustomerBasicInfo customer={customer} onUpdate={onUpdate} />
-          <CustomerContacts customer={customer} onUpdate={onUpdate} />
-          <CustomerContracts customer={customer} />
-          <CustomerCases customer={customer} />
-          <CustomerActivities customer={customer} />
-          <CustomerTasks customer={customer} />
+    <Link to={`/customers/${customer.id}`} className="block">
+      <div className="bg-white shadow rounded-lg p-6 hover:shadow-md transition-shadow duration-200">
+        <div className="flex items-center space-x-3">
+          <div className="flex-shrink-0">
+            {customer.type === CustomerType.COMPANY ? (
+              <FaBuilding className="h-6 w-6 text-gray-400" />
+            ) : (
+              <FaUser className="h-6 w-6 text-gray-400" />
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-gray-900 truncate">
+              {customer.name}
+            </p>
+            <p className="text-sm text-gray-500 truncate">
+              {customer.type === CustomerType.COMPANY ? customer.organizationNumber : 'Privatperson'}
+            </p>
+          </div>
         </div>
       </div>
-    </div>
+    </Link>
   );
 };
 

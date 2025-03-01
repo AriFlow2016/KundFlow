@@ -1,520 +1,227 @@
 import React, { useState } from 'react';
+import { Customer, CustomerType, CustomerStatus, Contact, Address } from '../../../types/customer';
 import { Dialog } from '@headlessui/react';
-import { FaMapMarkerAlt, FaBuilding, FaGlobe, FaUser, FaEdit, FaTrash, FaCheck } from 'react-icons/fa';
-import { Customer, CustomerFormData } from '../../../types/customer';
+import { FaMapMarkerAlt, FaBuilding, FaGlobe, FaUser, FaStar, FaEnvelope, FaPhone, FaPlus } from 'react-icons/fa';
 
 interface ProspectInfoProps {
   customer: Customer;
   onUpdate: (customer: Customer) => void;
-  onConvertToCustomer?: (customer: Customer) => void;
 }
 
-interface ContactFormData {
-  id?: string;
+interface ProspectFormData {
   name: string;
-  title: string;
-  email: string;
-  phone: string;
-  role: string;
-  isPrimary: boolean;
+  type: CustomerType;
+  status: CustomerStatus;
+  organizationNumber?: string;
+  website?: string;
+  visitingAddress: Address;
+  mailingAddress: Address;
+  contacts: Contact[];
 }
 
-const PROSPECT_STATUSES = [
-  { id: 'new', name: 'Ny prospect' },
-  { id: 'contacted', name: 'Kontaktad' },
-  { id: 'meeting_booked', name: 'Möte bokat' },
-  { id: 'qualified', name: 'Kvalificerad' },
-  { id: 'proposal_sent', name: 'Offert skickad' },
-  { id: 'negotiating', name: 'Förhandling' },
-];
-
-const emptyContact: ContactFormData = {
-  name: '',
-  title: '',
-  email: '',
-  phone: '',
-  role: '',
-  isPrimary: false,
+const emptyAddress: Address = {
+  street: '',
+  postalCode: '',
+  city: '',
+  country: 'Sverige'
 };
 
-const ProspectInfo: React.FC<ProspectInfoProps> = ({ customer, onUpdate, onConvertToCustomer }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState<CustomerFormData>({
+export const ProspectInfo: React.FC<ProspectInfoProps> = ({ customer, onUpdate }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [formData, setFormData] = useState<ProspectFormData>({
+    name: customer.name,
     type: customer.type,
     status: customer.status,
-    name: customer.name,
-    visitingAddress: customer.visitingAddress,
-    mailingAddress: customer.mailingAddress,
     organizationNumber: customer.organizationNumber,
     website: customer.website,
-    industry: customer.industry,
-    revenue: customer.revenue,
-    employees: customer.employees,
-    description: customer.description,
-    contacts: customer.contacts.map(contact => ({
-      ...contact,
-      id: contact.id
-    }))
+    visitingAddress: customer.visitingAddress || emptyAddress,
+    mailingAddress: customer.mailingAddress || emptyAddress,
+    contacts: customer.contacts
   });
 
-  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
-  const [currentContact, setCurrentContact] = useState<ContactFormData>(emptyContact);
-  const [isEditingContact, setIsEditingContact] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      const updatedCustomer = {
-        ...customer,
-        ...formData
-      };
-      onUpdate(updatedCustomer);
-      setIsEditing(false);
-    } catch (error) {
-      console.error('Error updating prospect:', error);
-    }
-  };
-
-  const handleStatusChange = (newStatus: string) => {
-    const updatedData = {
+    
+    const updatedCustomer: Customer = {
+      ...customer,
       ...formData,
-      status: newStatus
+      updatedAt: new Date().toISOString()
     };
-    setFormData(updatedData);
-    onUpdate({ ...customer, ...updatedData });
+
+    onUpdate(updatedCustomer);
+    setIsOpen(false);
   };
 
-  const handleConvertToCustomer = () => {
-    if (onConvertToCustomer) {
-      onConvertToCustomer({ ...customer, type: 'customer' });
-    }
-  };
-
-  const handleContactSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const updatedContacts = isEditingContact
-      ? formData.contacts.map((contact) =>
-          contact.id === currentContact.id ? { ...currentContact } : contact
-        )
-      : [...formData.contacts, { ...currentContact, id: Date.now().toString() }];
-
-    setFormData({ ...formData, contacts: updatedContacts });
-    setIsContactModalOpen(false);
-    setCurrentContact(emptyContact);
-    setIsEditingContact(false);
-    onUpdate({ ...formData, contacts: updatedContacts });
-  };
-
-  const handleOpenContactModal = (contact?: Contact) => {
-    if (contact) {
-      setCurrentContact({
-        id: contact.id,
-        name: contact.name,
-        title: contact.title,
-        email: contact.email,
-        phone: contact.phone,
-        role: contact.role,
-        isPrimary: contact.isPrimary,
-      });
-      setIsEditingContact(true);
-    } else {
-      setCurrentContact(emptyContact);
-      setIsEditingContact(false);
-    }
-    setIsContactModalOpen(true);
-  };
-
-  const handleDeleteContact = (contactId: string) => {
-    const updatedContacts = formData.contacts.filter(
-      (contact) => contact.id !== contactId
-    );
-    setFormData({ ...formData, contacts: updatedContacts });
-    onUpdate({ ...formData, contacts: updatedContacts });
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+  const renderAddress = (title: string, address: Address) => (
+    <div className="mt-4">
+      <h4 className="text-sm font-medium text-gray-500">{title}</h4>
+      <div className="mt-2 text-sm text-gray-900">
+        <p>{address.street}</p>
+        <p>{address.postalCode} {address.city}</p>
+        <p>{address.country}</p>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="space-y-6">
-      {/* Status och åtgärder */}
-      <div className="bg-white shadow rounded-lg p-6">
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex items-center space-x-4">
-            <h3 className="text-lg font-medium text-gray-900">Prospect Status</h3>
-            <select
-              value={formData.status}
-              onChange={(e) => handleStatusChange(e.target.value)}
-              className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            >
-              {PROSPECT_STATUSES.map((status) => (
-                <option key={status.id} value={status.id}>
-                  {status.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          {formData.status === 'qualified' && onConvertToCustomer && (
-            <button
-              onClick={handleConvertToCustomer}
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700"
-            >
-              <FaCheck className="mr-2" />
-              Konvertera till kund
-            </button>
-          )}
-        </div>
+    <div className="bg-white shadow rounded-lg p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="text-lg font-medium text-gray-900">Prospekt Information</h3>
+        <button
+          onClick={() => setIsOpen(true)}
+          className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        >
+          <FaPlus className="mr-2" />
+          Redigera
+        </button>
       </div>
 
-      {/* Företagsinformation */}
-      <div className="bg-white shadow rounded-lg p-6">
-        <div className="flex justify-between items-start mb-4">
-          <h3 className="text-lg font-medium text-gray-900">Företagsinformation</h3>
-          <button
-            onClick={() => setIsEditing(!isEditing)}
-            className="text-blue-600 hover:text-blue-800"
-          >
-            <FaEdit className="h-5 w-5" />
-          </button>
+      <div className="grid grid-cols-1 gap-4">
+        <div>
+          <h4 className="text-sm font-medium text-gray-500">Namn</h4>
+          <p className="mt-2 text-sm text-gray-900">{customer.name}</p>
         </div>
 
-        {!isEditing ? (
-          <div className="space-y-4">
+        {customer.type === CustomerType.COMPANY && (
+          <>
             <div>
-              <h3 className="text-sm font-medium text-gray-500">Företagsnamn</h3>
-              <p className="mt-1">{customer.name}</p>
+              <h4 className="text-sm font-medium text-gray-500">Organisationsnummer</h4>
+              <p className="mt-2 text-sm text-gray-900">{customer.organizationNumber}</p>
             </div>
 
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Organisationsnummer</h3>
-              <p className="mt-1">{customer.organizationNumber}</p>
-            </div>
-
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Besöksadress</h3>
-              <p className="mt-1">
-                {customer.visitingAddress.street}<br />
-                {customer.visitingAddress.postalCode} {customer.visitingAddress.city}
-              </p>
-            </div>
-
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Webbplats</h3>
-              <p className="mt-1">
-                <a href={customer.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">
-                  {customer.website}
-                </a>
-              </p>
-            </div>
-
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Bransch</h3>
-              <p className="mt-1">{customer.industry}</p>
-            </div>
-
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Beskrivning</h3>
-              <p className="mt-1">{customer.description}</p>
-            </div>
-          </div>
-        ) : (
-          <Dialog
-            open={isEditing}
-            onClose={() => setIsEditing(false)}
-            className="fixed z-10 inset-0 overflow-y-auto"
-          >
-            <div className="flex items-center justify-center min-h-screen">
-              <Dialog.Overlay className="fixed inset-0 bg-black opacity-30" />
-
-              <div className="relative bg-white rounded-lg p-8 max-w-md w-full mx-4">
-                <Dialog.Title className="text-lg font-medium mb-4">
-                  Redigera grundinformation
-                </Dialog.Title>
-
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Företagsnamn
-                    </label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Organisationsnummer
-                    </label>
-                    <input
-                      type="text"
-                      name="organizationNumber"
-                      value={formData.organizationNumber}
-                      onChange={handleInputChange}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Webbplats
-                    </label>
-                    <input
-                      type="url"
-                      name="website"
-                      value={formData.website}
-                      onChange={handleInputChange}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Bransch
-                    </label>
-                    <input
-                      type="text"
-                      name="industry"
-                      value={formData.industry}
-                      onChange={handleInputChange}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Beskrivning
-                    </label>
-                    <textarea
-                      name="description"
-                      value={formData.description}
-                      onChange={handleInputChange}
-                      rows={3}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div className="flex justify-end space-x-4 mt-6">
-                    <button
-                      type="button"
-                      onClick={() => setIsEditing(false)}
-                      className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900"
-                    >
-                      Avbryt
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
-                    >
-                      Spara
-                    </button>
-                  </div>
-                </form>
+            {customer.website && (
+              <div>
+                <h4 className="text-sm font-medium text-gray-500">Webbplats</h4>
+                <p className="mt-2 text-sm text-gray-900">
+                  <a 
+                    href={customer.website} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="text-blue-600 hover:text-blue-800"
+                  >
+                    {customer.website}
+                  </a>
+                </p>
               </div>
-            </div>
-          </Dialog>
+            )}
+          </>
         )}
+
+        {customer.visitingAddress && renderAddress("Besöksadress", customer.visitingAddress)}
+        {customer.mailingAddress && renderAddress("Postadress", customer.mailingAddress)}
       </div>
 
-      {/* Kontakter */}
-      <div className="bg-white shadow rounded-lg p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-medium text-gray-900">Kontakter</h3>
-          <button
-            onClick={() => handleOpenContactModal()}
-            className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
-          >
-            Lägg till kontakt
-          </button>
-        </div>
-
-        <div className="space-y-4">
-          {formData.contacts.map((contact) => (
-            <div
-              key={contact.id}
-              className="flex items-start justify-between p-4 border rounded-lg"
-            >
-              <div className="space-y-1">
-                <div className="flex items-center">
-                  <span className="font-medium">{contact.name}</span>
-                  {contact.isPrimary && (
-                    <FaStar className="ml-2 h-4 w-4 text-yellow-400" />
-                  )}
-                </div>
-                <div className="text-sm text-gray-500">{contact.title}</div>
-                <div className="text-sm text-gray-500">{contact.role}</div>
-                <div className="flex items-center space-x-4 mt-2">
-                  {contact.email && (
-                    <a
-                      href={`mailto:${contact.email}`}
-                      className="flex items-center text-gray-600 hover:text-blue-600"
-                    >
-                      <FaEnvelope className="h-4 w-4 mr-1" />
-                      {contact.email}
-                    </a>
-                  )}
-                  {contact.phone && (
-                    <a
-                      href={`tel:${contact.phone}`}
-                      className="flex items-center text-gray-600 hover:text-blue-600"
-                    >
-                      <FaPhone className="h-4 w-4 mr-1" />
-                      {contact.phone}
-                    </a>
-                  )}
-                </div>
-              </div>
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => handleOpenContactModal(contact)}
-                  className="text-gray-400 hover:text-blue-500"
-                  title="Redigera kontakt"
-                >
-                  <FaEdit className="h-5 w-5" />
-                </button>
-                <button
-                  onClick={() => handleDeleteContact(contact.id)}
-                  className="text-gray-400 hover:text-red-500"
-                  title="Ta bort kontakt"
-                >
-                  <FaTrash className="h-5 w-5" />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Kontakt Modal */}
       <Dialog
-        open={isContactModalOpen}
-        onClose={() => setIsContactModalOpen(false)}
-        className="fixed z-10 inset-0 overflow-y-auto"
+        open={isOpen}
+        onClose={() => setIsOpen(false)}
+        className="fixed inset-0 z-10 overflow-y-auto"
       >
         <div className="flex items-center justify-center min-h-screen">
           <Dialog.Overlay className="fixed inset-0 bg-black opacity-30" />
 
-          <div className="relative bg-white rounded-lg p-8 max-w-md w-full mx-4">
-            <Dialog.Title className="text-lg font-medium mb-4">
-              {isEditingContact ? 'Redigera kontakt' : 'Lägg till ny kontakt'}
+          <div className="relative bg-white rounded-lg max-w-md w-full mx-4 p-6">
+            <Dialog.Title className="text-lg font-medium text-gray-900">
+              Redigera prospekt
             </Dialog.Title>
 
-            <form onSubmit={handleContactSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Namn
-                </label>
-                <input
-                  type="text"
-                  value={currentContact.name}
-                  onChange={(e) =>
-                    setCurrentContact({ ...currentContact, name: e.target.value })
-                  }
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  required
-                />
-              </div>
+            <form onSubmit={handleSubmit} className="mt-4">
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                    Namn
+                  </label>
+                  <input
+                    type="text"
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    required
+                  />
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Titel
-                </label>
-                <input
-                  type="text"
-                  value={currentContact.title}
-                  onChange={(e) =>
-                    setCurrentContact({ ...currentContact, title: e.target.value })
-                  }
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                />
-              </div>
+                {formData.type === CustomerType.COMPANY && (
+                  <>
+                    <div>
+                      <label htmlFor="organizationNumber" className="block text-sm font-medium text-gray-700">
+                        Organisationsnummer
+                      </label>
+                      <input
+                        type="text"
+                        id="organizationNumber"
+                        value={formData.organizationNumber || ''}
+                        onChange={(e) => setFormData({ ...formData, organizationNumber: e.target.value })}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                      />
+                    </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Roll/Funktion
-                </label>
-                <input
-                  type="text"
-                  value={currentContact.role}
-                  onChange={(e) =>
-                    setCurrentContact({ ...currentContact, role: e.target.value })
-                  }
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                />
-              </div>
+                    <div>
+                      <label htmlFor="website" className="block text-sm font-medium text-gray-700">
+                        Webbplats
+                      </label>
+                      <input
+                        type="url"
+                        id="website"
+                        value={formData.website || ''}
+                        onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                      />
+                    </div>
+                  </>
+                )}
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  E-post
-                </label>
-                <input
-                  type="email"
-                  value={currentContact.email}
-                  onChange={(e) =>
-                    setCurrentContact({ ...currentContact, email: e.target.value })
-                  }
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Telefon
-                </label>
-                <input
-                  type="tel"
-                  value={currentContact.phone}
-                  onChange={(e) =>
-                    setCurrentContact({ ...currentContact, phone: e.target.value })
-                  }
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  required
-                />
-              </div>
-
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="isPrimary"
-                  checked={currentContact.isPrimary}
-                  onChange={(e) =>
-                    setCurrentContact({
-                      ...currentContact,
-                      isPrimary: e.target.checked,
-                    })
-                  }
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <label
-                  htmlFor="isPrimary"
-                  className="ml-2 block text-sm text-gray-900"
-                >
-                  Sätt som primär kontakt
-                </label>
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">Besöksadress</h4>
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      placeholder="Gatuadress"
+                      value={formData.visitingAddress.street}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        visitingAddress: { ...formData.visitingAddress, street: e.target.value }
+                      })}
+                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    />
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        placeholder="Postnummer"
+                        value={formData.visitingAddress.postalCode}
+                        onChange={(e) => setFormData({
+                          ...formData,
+                          visitingAddress: { ...formData.visitingAddress, postalCode: e.target.value }
+                        })}
+                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Ort"
+                        value={formData.visitingAddress.city}
+                        onChange={(e) => setFormData({
+                          ...formData,
+                          visitingAddress: { ...formData.visitingAddress, city: e.target.value }
+                        })}
+                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div className="mt-6 flex justify-end space-x-3">
                 <button
                   type="button"
-                  onClick={() => setIsContactModalOpen(false)}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  onClick={() => setIsOpen(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
                 >
                   Avbryt
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md"
                 >
-                  {isEditingContact ? 'Uppdatera' : 'Lägg till'}
+                  Spara
                 </button>
               </div>
             </form>

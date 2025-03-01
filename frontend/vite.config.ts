@@ -14,10 +14,24 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:3000',
+        target: process.env.VITE_API_URL || 'http://localhost:3000',
         changeOrigin: true,
+        secure: false,
       },
     },
+  },
+  build: {
+    outDir: 'dist',
+    sourcemap: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          ui: ['@headlessui/react', '@heroicons/react'],
+          adminlte: ['admin-lte', 'jquery']
+        }
+      }
+    }
   },
   optimizeDeps: {
     include: [
@@ -25,15 +39,5 @@ export default defineConfig({
       'admin-lte/dist/js/adminlte.min.js'
     ],
     force: true
-  },
-  build: {
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom'],
-          adminlte: ['admin-lte', 'jquery']
-        }
-      }
-    }
   }
 });

@@ -1,14 +1,30 @@
-export type CustomerType = 'prospect' | 'customer';
-export type CustomerStatus = string;
+export enum CustomerType {
+  COMPANY = 'COMPANY',
+  PRIVATE = 'PRIVATE'
+}
+
+export enum CustomerStatus {
+  LEAD = 'LEAD',
+  PROSPECT = 'PROSPECT',
+  CUSTOMER = 'CUSTOMER',
+  INACTIVE = 'INACTIVE'
+}
 
 export interface Contact {
   id: string;
-  name: string;
-  title: string;
+  firstName: string;
+  lastName: string;
   email: string;
   phone: string;
-  role: string;
+  role?: string;
   isPrimary: boolean;
+}
+
+export interface Address {
+  street: string;
+  postalCode: string;
+  city: string;
+  country: string;
 }
 
 export interface ContactFormData extends Omit<Contact, 'id'> {
@@ -17,28 +33,15 @@ export interface ContactFormData extends Omit<Contact, 'id'> {
 
 export interface Customer {
   id: string;
+  name: string;
   type: CustomerType;
   status: CustomerStatus;
-  name: string;
-  visitingAddress: {
-    street: string;
-    postalCode: string;
-    city: string;
-    country: string;
-  };
-  mailingAddress: {
-    street: string;
-    postalCode: string;
-    city: string;
-    country: string;
-  };
-  organizationNumber: string;
-  website: string;
-  industry: string;
-  revenue: number;
-  employees: number;
-  description: string;
+  organizationNumber?: string;
+  website?: string;
+  visitingAddress?: Address;
+  mailingAddress?: Address;
   contacts: Contact[];
+  notes?: string;
   createdAt: string;
   updatedAt: string;
 }

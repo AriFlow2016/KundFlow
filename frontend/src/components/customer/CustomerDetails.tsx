@@ -1,65 +1,35 @@
-import { useState } from 'react';
+import React from 'react';
 import { Customer } from '../../types/customer';
-import { ProspectInfo } from './sections/ProspectInfo';
+import ProspectInfo from './sections/ProspectInfo';
+import CustomerBasicInfo from './sections/CustomerBasicInfo';
+import CustomerCases from './sections/CustomerCases';
+import CustomerActivities from './sections/CustomerActivities';
+import CustomerTasks from './sections/CustomerTasks';
+import CustomerContacts from './sections/CustomerContacts';
 import { CustomerContracts } from './sections/CustomerContracts';
-import { CustomerCases } from './sections/CustomerCases';
-import { CustomerActivities } from './sections/CustomerActivities';
 
 interface CustomerDetailsProps {
   customer: Customer;
   onUpdate: (customer: Customer) => void;
 }
 
-export const CustomerDetails: React.FC<CustomerDetailsProps> = ({
-  customer,
-  onUpdate,
-}) => {
-  const [activeTab, setActiveTab] = useState('info');
-
-  const tabs = [
-    { id: 'info', name: 'Grundinformation' },
-    { id: 'contracts', name: 'Avtal' },
-    { id: 'cases', name: 'Ärenden' },
-    { id: 'activities', name: 'Aktiviteter' },
-  ];
-
+export const CustomerDetails: React.FC<CustomerDetailsProps> = ({ customer, onUpdate }) => {
   return (
-    <div className="h-full flex flex-col">
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8" aria-label="Tabs">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`
-                whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm
-                ${
-                  activeTab === tab.id
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }
-              `}
-            >
-              {tab.name}
-            </button>
-          ))}
-        </nav>
-      </div>
-
-      <div className="flex-1 overflow-y-auto p-6">
-        {activeTab === 'info' && (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="space-y-6">
+        {customer.status === 'PROSPECT' ? (
           <ProspectInfo customer={customer} onUpdate={onUpdate} />
+        ) : (
+          <CustomerBasicInfo customer={customer} onUpdate={onUpdate} />
         )}
-        {activeTab === 'contracts' && (
-          <CustomerContracts customer={customer} onUpdate={onUpdate} />
-        )}
-        {activeTab === 'cases' && (
-          <CustomerCases customer={customer} onUpdate={onUpdate} />
-        )}
-        {activeTab === 'activities' && (
-          <CustomerActivities customer={customer} onUpdate={onUpdate} />
-        )}
+        <CustomerContacts customer={customer} onUpdate={onUpdate} />
+        <CustomerContracts customer={customer} />
+        <CustomerCases customer={customer} onUpdate={onUpdate} />
+        <CustomerActivities customer={customer} onUpdate={onUpdate} />
+        <CustomerTasks customer={customer} onUpdate={onUpdate} />
       </div>
     </div>
   );
 };
+
+export default CustomerDetails;
