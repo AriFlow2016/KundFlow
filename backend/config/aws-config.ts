@@ -1,39 +1,47 @@
 import { S3Client } from '@aws-sdk/client-s3';
 import { TextractClient } from '@aws-sdk/client-textract';
 
-// Använd environment variabler istället för hårdkodade värden
-export const awsConfig = {
-  region: process.env.AWS_REGION || 'eu-north-1',
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+// Grundkonfiguration
+const getAwsConfig = () => {
+  const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+
+  if (!accessKeyId || !secretAccessKey) {
+    throw new Error('AWS credentials are not configured');
   }
+
+  return {
+    credentials: {
+      accessKeyId,
+      secretAccessKey
+    }
+  };
 };
 
 // S3 konfiguration (Stockholm)
-const S3_CONFIG_STOCKHOLM = {
-  ...awsConfig,
-  region: 'eu-north-1'
+export const S3_CONFIG_STOCKHOLM = {
+  region: 'eu-north-1',
+  credentials: getAwsConfig().credentials
 };
 
 // S3 och Textract konfiguration (Irland)
-const IRELAND_CONFIG = {
-  ...awsConfig,
-  region: 'eu-west-1'
+export const S3_CONFIG_IRELAND = {
+  region: 'eu-west-1',
+  credentials: getAwsConfig().credentials
 };
 
 export const AWS_CONFIG = S3_CONFIG_STOCKHOLM;
 
 export const S3_CONFIG = {
-  bucket: 'ariflow-documents',  // Huvudbucket i Stockholm
-  textractBucket: 'ariflow-textract'  // OCR-bucket i Irland
+  bucket: 'ariflow-documents',
+  textractBucket: 'ariflow-textract'
 };
 
 // Initiera S3-klient i Stockholm för huvudbucketen
 export const s3Client = new S3Client(S3_CONFIG_STOCKHOLM);
 
-// Initiera S3-klient i Irland för Textract-bucketen
-export const s3IrelandClient = new S3Client(IRELAND_CONFIG);
+// Initiera S3-klient i Irland för Textract
+export const s3ClientIreland = new S3Client(S3_CONFIG_IRELAND);
 
 // Initiera Textract-klient i Irland
-export const textractClient = new TextractClient(IRELAND_CONFIG);
+export const textractClient = new TextractClient(S3_CONFIG_IRELAND);

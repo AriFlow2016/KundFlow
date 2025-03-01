@@ -47,8 +47,8 @@ const ContractSchema = new Schema<IContract>(
 // Index för att snabbt hitta avtal som snart löper ut
 ContractSchema.index({ endDate: 1 });
 
-// Automatisk rensning av dokument från S3 när ett avtal tas bort
-ContractSchema.pre('remove', async function(next) {
+// Använd pre('deleteOne') istället för pre('remove')
+ContractSchema.pre('deleteOne', { document: true }, async function(next) {
   if (this.documentKey) {
     try {
       // TODO: Implementera S3 dokumentborttagning

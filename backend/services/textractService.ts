@@ -13,6 +13,20 @@ interface ExtractedText {
     keyValuePairs: { [key: string]: string };
 }
 
+interface Block {
+    Id: string;
+    Relationships?: Array<{ Type: string; Ids: string[] }>;
+    [key: string]: any;
+}
+
+function sortBlocks(a: Block, b: Block): number {
+    return a.Id.localeCompare(b.Id);
+}
+
+function findRelationshipIds(rel: { Type: string; Ids: string[] }, id: string, b: Block): boolean {
+    return rel.Ids.includes(id);
+}
+
 export class TextractService {
     async extractTextFromS3(key: string, filePath: string): Promise<ExtractedText> {
         try {
