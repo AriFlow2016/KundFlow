@@ -2,7 +2,7 @@ services:
   # Frontend Service
   - type: static
     name: kundflow-frontend
-    buildCommand: cd frontend && npm install && npm run build
+    buildCommand: chmod +x deploy.sh && ./deploy.sh
     publishPath: frontend/dist
     envVars:
       - key: NODE_VERSION
