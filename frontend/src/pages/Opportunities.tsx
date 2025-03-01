@@ -1,7 +1,15 @@
 import React, { useState } from 'react';
-import { Opportunity } from '../types';
-import { FaBuilding, FaUser, FaSort, FaFilter, FaTag, FaChartLine, FaCalendarAlt, FaClock } from 'react-icons/fa';
-import { StatCard } from '../components/StatCard';
+import { FaCalendarAlt, FaClock, FaChartLine, FaFilter, FaSort, FaTag, FaBuilding, FaUser } from 'react-icons/fa';
+import { Opportunity } from '../types/opportunity';
+
+interface OpportunityData {
+  id: string;
+  name: string;
+  value: number;
+  probability: number;
+  status: string;
+  expectedCloseDate: string;
+}
 
 const initialOpportunities: Opportunity[] = [
   {
@@ -65,7 +73,7 @@ const priorityColors = {
   high: 'bg-red-100 text-red-800'
 };
 
-export default function Opportunities() {
+const Opportunities: React.FC = () => {
   const [opportunities, setOpportunities] = useState<Opportunity[]>(initialOpportunities);
   const [showNewOpportunityForm, setShowNewOpportunityForm] = useState(false);
   const [newOpportunity, setNewOpportunity] = useState<Partial<Opportunity>>({});
@@ -373,4 +381,6 @@ export default function Opportunities() {
       </div>
     </div>
   );
-}
+};
+
+export default Opportunities;

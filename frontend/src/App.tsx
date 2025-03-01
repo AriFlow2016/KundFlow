@@ -1,11 +1,8 @@
-import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
-import { FaUsers, FaChartLine, FaCalendar, FaCog } from 'react-icons/fa';
+import { Customers } from './pages/Customers';
+import { Leads } from './pages/Leads';
+import { Settings } from './pages/Settings';
 import { RealtimeProvider } from './contexts/RealtimeContext';
-import Prospects from './pages/Prospects';
-import Analytics from './pages/Analytics';
-import Calendar from './pages/Calendar';
-import Settings from './pages/Settings';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -26,54 +23,50 @@ function App() {
             pauseOnHover
             theme="light"
           />
-          {/* Sidebar */}
-          <div className="fixed inset-y-0 left-0 w-64 bg-gray-800">
-            <div className="flex flex-col h-full">
-              <div className="flex items-center justify-center h-16 bg-gray-900">
-                <h1 className="text-white text-xl font-bold">KundFlow</h1>
+          <nav className="bg-white shadow-lg">
+            <div className="max-w-7xl mx-auto px-4">
+              <div className="flex justify-between h-16">
+                <div className="flex">
+                  <div className="flex-shrink-0 flex items-center">
+                    <span className="text-xl font-bold text-blue-600">KundFlow</span>
+                  </div>
+                  <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
+                    <Link
+                      to="/customers"
+                      className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+                    >
+                      Kunder
+                    </Link>
+                    <Link
+                      to="/leads"
+                      className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+                    >
+                      Leads
+                    </Link>
+                    <Link
+                      to="/settings"
+                      className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+                    >
+                      Inställningar
+                    </Link>
+                  </div>
+                </div>
               </div>
-              <nav className="flex-1 px-2 py-4 space-y-1">
-                <Link
-                  to="/"
-                  className="flex items-center px-4 py-2 text-white bg-gray-900 rounded-md"
-                >
-                  <FaUsers className="mr-3" />
-                  Prospekt
-                </Link>
-                <Link
-                  to="/analytics"
-                  className="flex items-center px-4 py-2 text-gray-300 hover:bg-gray-700 rounded-md"
-                >
-                  <FaChartLine className="mr-3" />
-                  Analys
-                </Link>
-                <Link
-                  to="/calendar"
-                  className="flex items-center px-4 py-2 text-gray-300 hover:bg-gray-700 rounded-md"
-                >
-                  <FaCalendar className="mr-3" />
-                  Kalender
-                </Link>
-                <Link
-                  to="/settings"
-                  className="flex items-center px-4 py-2 text-gray-300 hover:bg-gray-700 rounded-md"
-                >
-                  <FaCog className="mr-3" />
-                  Inställningar
-                </Link>
-              </nav>
             </div>
-          </div>
+          </nav>
 
-          {/* Main content */}
-          <div className="pl-64">
-            <Routes>
-              <Route path="/" element={<Prospects />} />
-              <Route path="/analytics" element={<Analytics />} />
-              <Route path="/calendar" element={<Calendar />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
+          <div className="py-10">
+            <main>
+              <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                <Routes>
+                  <Route path="/customers" element={<Customers />} />
+                  <Route path="/leads" element={<Leads />} />
+                  <Route path="/settings" element={<Settings />} />
+                  <Route path="/" element={<Customers />} />
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </div>
+            </main>
           </div>
         </div>
       </Router>

@@ -4,7 +4,7 @@ import { CustomerService } from '../services/customerService';
 import { CustomerList } from '../components/customer/CustomerList';
 import { CustomerDetails } from '../components/customer/CustomerDetails';
 
-export const Prospects = () => {
+export const Customers = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [isLoading, setIsLoading] = useState(true);

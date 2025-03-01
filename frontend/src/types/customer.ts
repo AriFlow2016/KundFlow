@@ -1,7 +1,5 @@
-export type CustomerType = 'COMPANY' | 'INDIVIDUAL' | 'PARTNER';
-export type CustomerStatus = 'PROSPECT' | 'ACTIVE' | 'VIP' | 'INACTIVE';
-export type OperatorType = 'TELIA' | 'TELE2' | 'TELENOR' | 'TRE' | 'OTHER';
-export type ContractType = 'MOBILE' | 'BROADBAND' | 'LANDLINE' | 'OTHER';
+export type CustomerType = 'prospect' | 'customer';
+export type CustomerStatus = string;
 
 export interface Contact {
   id: string;
@@ -12,6 +10,46 @@ export interface Contact {
   role: string;
   isPrimary: boolean;
 }
+
+export interface ContactFormData extends Omit<Contact, 'id'> {
+  id?: string;
+}
+
+export interface Customer {
+  id: string;
+  type: CustomerType;
+  status: CustomerStatus;
+  name: string;
+  visitingAddress: {
+    street: string;
+    postalCode: string;
+    city: string;
+    country: string;
+  };
+  mailingAddress: {
+    street: string;
+    postalCode: string;
+    city: string;
+    country: string;
+  };
+  organizationNumber: string;
+  website: string;
+  industry: string;
+  revenue: number;
+  employees: number;
+  description: string;
+  contacts: Contact[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CustomerFormData extends Omit<Customer, 'id' | 'createdAt' | 'updatedAt' | 'contacts'> {
+  id?: string;
+  contacts: ContactFormData[];
+}
+
+export type OperatorType = 'TELIA' | 'TELE2' | 'TELENOR' | 'TRE' | 'OTHER';
+export type ContractType = 'MOBILE' | 'BROADBAND' | 'LANDLINE' | 'OTHER';
 
 export interface Contract {
   id: string;
@@ -53,52 +91,4 @@ export interface Task {
   assignedTo: string;
   status: 'TODO' | 'IN_PROGRESS' | 'DONE';
   priority: 'LOW' | 'MEDIUM' | 'HIGH';
-}
-
-export interface Customer {
-  id: string;
-  type: CustomerType;
-  status: CustomerStatus;
-  
-  // Grundläggande info
-  name: string;
-  organizationNumber?: string;
-  personalNumber?: string;
-  website?: string;
-  
-  // Adresser
-  visitingAddress: {
-    street: string;
-    postalCode: string;
-    city: string;
-    country: string;
-  };
-  billingAddress?: {
-    street: string;
-    postalCode: string;
-    city: string;
-    country: string;
-  };
-  
-  // Klassificering
-  industry?: string;
-  leadSource?: string;
-  segment?: string;
-  tags: string[];
-  
-  // Relationer
-  contacts: Contact[];
-  contracts: Contract[];
-  cases: Case[];
-  activities: Activity[];
-  tasks: Task[];
-  
-  // Marknadsföring
-  newsletter: boolean;
-  marketingConsent: boolean;
-  
-  // Metadata
-  createdAt: string;
-  updatedAt: string;
-  customFields: Record<string, any>;
 }

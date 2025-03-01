@@ -1,47 +1,81 @@
-import {
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-} from 'recharts';
-import { useRealtime } from '../../contexts/RealtimeContext';
+import { useEffect, useRef } from 'react';
+import Chart from 'chart.js/auto';
+import { ChartConfiguration } from 'chart.js';
 
-const COLORS = ['#34D399', '#60A5FA', '#F87171'];
+interface ConversionChartProps {
+  data: {
+    labels: string[];
+    values: number[];
+  };
+}
 
-export default function ConversionChart() {
-  const { charts } = useRealtime();
+export const ConversionChart = ({ data }: ConversionChartProps) => {
+  const chartRef = useRef<HTMLCanvasElement>(null);
+  const chartInstance = useRef<Chart | null>(null);
+
+  useEffect(() => {
+    if (!chartRef.current) return;
+
+    const ctx = chartRef.current.getContext('2d');
+    if (!ctx) return;
+
+    const config: ChartConfiguration = {
+      type: 'line',
+      data: {
+        labels: data.labels,
+        datasets: [
+          {
+            label: 'Konvertering',
+            data: data.values,
+            fill: false,
+            borderColor: 'rgb(59, 130, 246)',
+            tension: 0.1,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            display: false,
+          },
+          title: {
+            display: true,
+            text: 'Konverteringsgrad',
+          },
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) {
+                return value + '%';
+              },
+            },
+          },
+        },
+      },
+    };
+
+    if (chartInstance.current) {
+      chartInstance.current.destroy();
+    }
+
+    chartInstance.current = new Chart(ctx, config);
+
+    return () => {
+      if (chartInstance.current) {
+        chartInstance.current.destroy();
+      }
+    };
+  }, [data]);
 
   return (
     <div className="bg-white shadow rounded-lg p-6">
       <h3 className="text-lg font-medium text-gray-900 mb-4">Affärsutfall</h3>
       <div className="h-72">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={charts.conversion}
-              cx="50%"
-              cy="50%"
-              labelLine={false}
-              outerRadius={80}
-              fill="#8884d8"
-              dataKey="value"
-              label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-            >
-              {charts.conversion.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-              ))}
-            </Pie>
-            <Tooltip 
-              contentStyle={{ backgroundColor: 'white', borderRadius: '0.5rem' }}
-              formatter={(value: number) => [`${value} st`, '']}
-              labelStyle={{ color: '#374151' }}
-            />
-            <Legend />
-          </PieChart>
-        </ResponsiveContainer>
+        <canvas ref={chartRef} />
       </div>
     </div>
   );
-}
+};
