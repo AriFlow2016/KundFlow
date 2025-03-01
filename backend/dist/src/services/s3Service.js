@@ -41,8 +41,9 @@ class S3Service {
                     Bucket: bucket,
                     Key: key,
                 });
-                const url = yield (0, s3_request_presigner_1.getSignedUrl)(aws_config_1.s3Client, command, { expiresIn: 3600 });
-                return url;
+                // Använd en kortare expireringstid för signerade URLs
+                const signedUrl = yield (0, s3_request_presigner_1.getSignedUrl)(aws_config_1.s3Client, command, { expiresIn: 900 }); // 15 minuter
+                return signedUrl;
             }
             catch (error) {
                 console.error('Error generating signed URL:', error);

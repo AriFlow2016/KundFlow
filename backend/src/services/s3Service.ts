@@ -1,6 +1,5 @@
 import { s3Client } from '../../config/aws-config';
 import { PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 export class S3Service {
   async uploadFile(file: Express.Multer.File, key: string, isTextract: boolean = false): Promise<string> {
@@ -21,18 +20,12 @@ export class S3Service {
     }
   }
 
-  async getSignedDownloadUrl(key: string, isTextract: boolean = false): Promise<string> {
+  async getDownloadUrl(key: string, isTextract: boolean = false): Promise<string> {
     try {
       const bucket = isTextract ? process.env.AWS_S3_TEXTRACT_BUCKET : process.env.AWS_S3_BUCKET;
-      const command = new GetObjectCommand({
-        Bucket: bucket,
-        Key: key,
-      });
-
-      const url = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
-      return url;
+      return `https://${bucket}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
     } catch (error) {
-      console.error('Error generating signed URL:', error);
+      console.error('Error generating URL:', error);
       throw new Error('Failed to generate download URL');
     }
   }
