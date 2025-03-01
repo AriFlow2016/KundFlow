@@ -1,0 +1,45 @@
+{
+  "name": "kundflow-backend",
+  "version": "1.0.0",
+  "description": "Backend för KundFlow CRM",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "postinstall": "npm run build"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.740.0",
+    "@aws-sdk/client-textract": "^3.738.0",
+    "@aws-sdk/s3-request-presigner": "^3.721.0",
+    "@types/mongoose": "^5.11.96",
+    "@types/multer": "^1.4.12",
+    "bcryptjs": "^2.4.3",
+    "bull": "^4.16.5",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-async-handler": "^1.2.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.9.6",
+    "multer": "^1.4.5-lts.1",
+    "pg": "^8.11.3",
+    "puppeteer": "^24.1.1",
+    "tesseract.js": "^6.0.0",
+    "typeorm": "^0.3.17",
+    "uuid": "^11.0.5"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/node": "^20.10.5",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.3.3"
+  }
+}

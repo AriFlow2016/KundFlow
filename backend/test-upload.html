@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test File Upload</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .upload-section {
+            margin-bottom: 20px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .results-section {
+            margin-top: 20px;
+        }
+        .key-value-pairs {
+            margin-top: 10px;
+        }
+        .key-value-pair {
+            display: flex;
+            margin: 5px 0;
+        }
+        .key {
+            font-weight: bold;
+            margin-right: 10px;
+            min-width: 150px;
+        }
+        .raw-text {
+            white-space: pre-wrap;
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        .loading {
+            display: none;
+            color: #666;
+            margin: 10px 0;
+        }
+        .file-info {
+            margin: 20px 0;
+            padding: 10px;
+            background: #e9f7ef;
+            border-radius: 5px;
+        }
+        .file-link {
+            color: #2874a6;
+            text-decoration: none;
+        }
+        .file-link:hover {
+            text-decoration: underline;
+        }
+        .error {
+            color: #c0392b;
+            background: #fadbd8;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            display: none;
+        }
+        #debug {
+            margin-top: 20px;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="upload-section">
+        <h2>Ladda upp kontrakt</h2>
+        <input type="file" id="fileInput" accept=".pdf">
+        <button onclick="uploadFile()">Ladda upp</button>
+        <div id="loading" class="loading">Analyserar dokument...</div>
+        <div id="error" class="error"></div>
+    </div>
+
+    <div id="fileInfo" class="file-info" style="display: none">
+        <h3>Uppladdad fil</h3>
+        <p>Filnamn: <span id="fileName"></span></p>
+        <p>Länk: <a id="fileLink" class="file-link" target="_blank">Öppna fil</a></p>
+    </div>
+
+    <div class="results-section">
+        <h3>Extraherad information</h3>
+        <div id="keyValuePairs" class="key-value-pairs"></div>
+        
+        <h3>Rå text</h3>
+        <div id="rawText" class="raw-text"></div>
+    </div>
+
+    <div id="debug"></div>
+
+    <script>
+        function log(message, data = null) {
+            console.log(message, data);
+            const debug = document.getElementById('debug');
+            debug.textContent += `${message}\n`;
+            if (data) {
+                debug.textContent += JSON.stringify(data, null, 2) + '\n';
+            }
+        }
+
+        async function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            const loading = document.getElementById('loading');
+            const keyValuePairs = document.getElementById('keyValuePairs');
+            const rawText = document.getElementById('rawText');
+            const fileInfo = document.getElementById('fileInfo');
+            const error = document.getElementById('error');
+            const debug = document.getElementById('debug');
+            
+            debug.textContent = ''; // Clear debug log
+            
+            if (!file) {
+                error.textContent = 'Välj en fil först';
+                error.style.display = 'block';
+                return;
+            }
+
+            log('Vald fil:', {
+                name: file.name,
+                type: file.type,
+                size: file.size
+            });
+
+            // Visa laddningsindikator
+            loading.style.display = 'block';
+            error.style.display = 'none';
+            keyValuePairs.innerHTML = '';
+            rawText.innerHTML = '';
+            fileInfo.style.display = 'none';
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                log('Försöker ladda upp fil...');
+                const response = await fetch('http://localhost:3001/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                log('Svar från server:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    headers: Array.from(response.headers.entries())
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    log('Felmeddelande från server:', errorData);
+                    throw new Error(errorData.details || 'Något gick fel');
+                }
+
+                const result = await response.json();
+                log('Uppladdningsresultat:', result);
+
+                // Visa fillänk
+                document.getElementById('fileName').textContent = result.data.filename;
+                const fileLink = document.getElementById('fileLink');
+                fileLink.href = result.data.url;
+                fileInfo.style.display = 'block';
+
+                // Visa extraherad information
+                const extractedText = result.data.extractedText;
+                
+                // Visa key-value pairs
+                Object.entries(extractedText.keyValuePairs).forEach(([key, value]) => {
+                    const div = document.createElement('div');
+                    div.className = 'key-value-pair';
+                    div.innerHTML = `
+                        <span class="key">${key}:</span>
+                        <span class="value">${value}</span>
+                    `;
+                    keyValuePairs.appendChild(div);
+                });
+
+                // Visa rå text
+                rawText.textContent = extractedText.rawText;
+
+                alert('Fil uppladdad och analyserad!');
+            } catch (error) {
+                console.error('Detaljerat fel vid uppladdning:', error);
+                log('Detaljerat fel vid uppladdning:', error);
+                const errorDiv = document.getElementById('error');
+                errorDiv.textContent = `Fel vid uppladdning: ${error.message}. Kontrollera att servern är igång på http://localhost:3001`;
+                errorDiv.style.display = 'block';
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
