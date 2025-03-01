@@ -3,12 +3,13 @@ services:
   - type: static
     name: kundflow-frontend
     rootDir: frontend
-    buildCommand: npm install && npm run build:frontend
+    buildCommand: npm install && cd frontend && npm install && npm run build
     publishPath: frontend/dist
     envVars:
       - key: NODE_VERSION
         value: 18.x
       - key: VITE_API_URL
+        value: https://kundflow-backend.onrender.com
         sync: false
     routes:
       - type: rewrite
@@ -24,8 +25,8 @@ services:
     name: kundflow-backend
     env: node
     rootDir: backend
-    buildCommand: npm install && npm run build:backend
-    startCommand: npm run start:backend
+    buildCommand: cd backend && npm install && npm run build
+    startCommand: cd backend && npm run start
     envVars:
       - key: NODE_VERSION
         value: 18.x
@@ -45,6 +46,8 @@ services:
         value: production
       - key: PORT
         value: 3000
+      - key: CORS_ORIGIN
+        value: https://kundflow-frontend.onrender.com
     healthCheckPath: /api/health
     autoDeploy: true
     buildFilter:
