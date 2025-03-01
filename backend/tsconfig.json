@@ -8,15 +8,16 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true
+    "typeRoots": ["./node_modules/@types"],
+    "types": ["node", "express", "multer"]
   },
   "include": [
     "src/**/*",
-    "config/**/*",
     "services/**/*",
-    "models/**/*"
+    "config/**/*"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "dist"
   ]
 }

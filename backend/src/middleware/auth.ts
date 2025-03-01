@@ -1,14 +1,14 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
-interface AuthRequest extends Request {
+export interface AuthRequest extends Request {
   user?: {
     id: string;
     role: string;
   };
 }
 
-export const auth = (req: Request, res: Response, next: NextFunction) => {
+export const auth = (req: Request, res: Response, next: NextFunction): void => {
   // För utveckling, skippa auth temporärt
   (req as AuthRequest).user = { id: 'dev-user', role: 'admin' };
   next();
@@ -31,15 +31,18 @@ export const auth = (req: Request, res: Response, next: NextFunction) => {
 };
 
 export const checkRole = (roles: string[]) => {
-  return (req: AuthRequest, res: Response, next: NextFunction) => {
-    if (!req.user) {
-      return res.status(401).json({ message: 'Inte autentiserad' });
+  return (req: Request, res: Response, next: NextFunction): void => {
+    const user = (req as AuthRequest).user;
+    
+    if (!user) {
+      res.status(401).json({ message: 'Unauthorized' });
+      return;
     }
 
-    if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ message: 'Otillräckliga behörigheter' });
+    if (roles.includes(user.role)) {
+      next();
+    } else {
+      res.status(403).json({ message: 'Forbidden' });
     }
-
-    next();
   };
 };

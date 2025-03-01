@@ -2,25 +2,22 @@ import express, { Request, Response } from 'express';
 import multer, { FileFilterCallback } from 'multer';
 import { Contract } from '../models/Contract';
 import { localFileService } from '../services/localFileService';
-import { checkAuth, checkRole } from '../middleware/auth';
+import { auth, checkRole } from '../middleware/auth';
 import { validateObjectId } from '../middleware/validation';
+import { textractService } from '../../services/textractService';
 import path from 'path';
 
 const router = express.Router();
-const upload = multer({ 
-  storage: multer.memoryStorage(),
-  limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB gräns
-  },
-  fileFilter: (req: Request, file: Express.Multer.File, cb: FileFilterCallback) => {
-    const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'image/jpeg', 'image/png'];
-    if (allowedTypes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error('Invalid file type'));
-    }
+
+const storage = multer.diskStorage({
+  destination: './uploads/temp',
+  filename: (req: Request, file: Express.Multer.File, cb: FileFilterCallback) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
   }
 });
+
+const upload = multer({ storage: storage });
 
 // Statisk filserving för uppladdade filer
 router.use('/uploads', express.static(path.join(__dirname, '../../uploads')));
@@ -28,7 +25,7 @@ router.use('/uploads', express.static(path.join(__dirname, '../../uploads')));
 // Hämta alla avtal för en kund
 router.get(
   '/customer/:customerId',
-  checkAuth,
+  auth,
   validateObjectId('customerId'),
   async (req: Request, res: Response) => {
     try {
@@ -36,8 +33,7 @@ router.get(
         .sort({ endDate: 1 });
       res.json(contracts);
     } catch (error) {
-      console.error('Error fetching contracts:', error);
-      res.status(500).json({ message: 'Kunde inte hämta avtal' });
+      res.status(500).json({ message: 'Error fetching contracts' });
     }
   }
 );
@@ -45,7 +41,7 @@ router.get(
 // Skapa nytt avtal
 router.post(
   '/',
-  checkAuth,
+  auth,
   checkRole(['admin', 'manager']),
   upload.single('document'),
   async (req: Request, res: Response) => {
@@ -79,7 +75,7 @@ router.post(
 // Uppdatera avtal
 router.put(
   '/:id',
-  checkAuth,
+  auth,
   checkRole(['admin', 'manager']),
   validateObjectId('id'),
   upload.single('document'),
@@ -124,17 +120,37 @@ router.put(
   }
 );
 
+// Ladda upp fil
+router.post(
+  '/upload',
+  auth,
+  checkRole(['admin', 'manager']),
+  upload.single('document'),
+  async (req: Request, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: 'No file uploaded' });
+      }
+
+      const result = await localFileService.processUploadedFile(req.file);
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ message: 'Error processing file' });
+    }
+  }
+);
+
 // Ta bort avtal
 router.delete(
   '/:id',
-  checkAuth,
+  auth,
   checkRole(['admin', 'manager']),
   validateObjectId('id'),
   async (req: Request, res: Response) => {
     try {
       const contract = await Contract.findById(req.params.id);
       if (!contract) {
-        return res.status(404).json({ message: 'Avtalet hittades inte' });
+        return res.status(404).json({ message: 'Contract not found' });
       }
 
       if (contract.documentKey) {
@@ -142,10 +158,9 @@ router.delete(
       }
 
       await contract.remove();
-      res.json({ message: 'Avtalet har tagits bort' });
+      res.json({ message: 'Contract deleted successfully' });
     } catch (error) {
-      console.error('Error deleting contract:', error);
-      res.status(500).json({ message: 'Kunde inte ta bort avtal' });
+      res.status(500).json({ message: 'Error deleting contract' });
     }
   }
 );
