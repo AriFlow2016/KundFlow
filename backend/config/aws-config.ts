@@ -1,5 +1,6 @@
 import { S3Client } from '@aws-sdk/client-s3';
 import { TextractClient } from '@aws-sdk/client-textract';
+import { fromEnv } from '@aws-sdk/credential-providers';
 
 // Grundkonfiguration
 const getAwsConfig = () => {
@@ -21,13 +22,13 @@ const getAwsConfig = () => {
 // S3 konfiguration (Stockholm)
 export const S3_CONFIG_STOCKHOLM = {
   region: 'eu-north-1',
-  credentials: getAwsConfig().credentials
+  credentials: fromEnv()
 };
 
 // S3 och Textract konfiguration (Irland)
 export const S3_CONFIG_IRELAND = {
   region: 'eu-west-1',
-  credentials: getAwsConfig().credentials
+  credentials: fromEnv()
 };
 
 export const AWS_CONFIG = S3_CONFIG_STOCKHOLM;
