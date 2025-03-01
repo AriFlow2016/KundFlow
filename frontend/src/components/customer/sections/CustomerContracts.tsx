@@ -1,56 +1,52 @@
-import React, { useState } from 'react';
-import { Customer } from '../../../types/customer';
+import { useState } from 'react';
+import type { Contract } from '../../../types/customer';
 import { Dialog } from '@headlessui/react';
 import { FaPlus } from 'react-icons/fa';
 
-interface Contract {
-  id: string;
-  name: string;
-  type: string;
-  startDate: string;
-  endDate?: string;
-  value: number;
-  status: 'active' | 'expired' | 'pending';
-}
+const STATUS_TRANSLATIONS: Readonly<Record<Contract['status'], string>> = {
+  'ACTIVE': 'Aktiv',
+  'EXPIRED': 'Utgången',
+  'PENDING': 'Väntande'
+} as const;
 
-interface CustomerContractsProps {
-  customer: Customer;
-}
-
-export const CustomerContracts: React.FC<CustomerContractsProps> = ({ customer }) => {
+export const CustomerContracts = (): JSX.Element => {
   const [isOpen, setIsOpen] = useState(false);
-  const [contracts] = useState<Contract[]>([
+  const [contracts] = useState<readonly Contract[]>([
     {
       id: '1',
-      name: 'Serviceavtal 2024',
-      type: 'Service',
+      operator: 'TELIA',
+      type: 'MOBILE',
+      monthlyCost: 399,
       startDate: '2024-01-01',
       endDate: '2024-12-31',
-      value: 50000,
-      status: 'active'
+      status: 'ACTIVE'
     }
   ]);
 
-  const getStatusColor = (status: Contract['status']) => {
+  const getStatusColor = (status: Contract['status']): string => {
     switch (status) {
-      case 'active':
+      case 'ACTIVE':
         return 'bg-green-100 text-green-800';
-      case 'expired':
+      case 'EXPIRED':
         return 'bg-red-100 text-red-800';
-      case 'pending':
+      case 'PENDING':
         return 'bg-yellow-100 text-yellow-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const formatCurrency = (value: number) => {
+  const formatCurrency = (value: number): string => {
     return new Intl.NumberFormat('sv-SE', {
       style: 'currency',
       currency: 'SEK',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
     }).format(value);
+  };
+
+  const closeModal = () => {
+    setIsOpen(false);
   };
 
   return (
@@ -72,7 +68,7 @@ export const CustomerContracts: React.FC<CustomerContractsProps> = ({ customer }
             <thead>
               <tr>
                 <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Avtal
+                  Operatör
                 </th>
                 <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Typ
@@ -81,7 +77,7 @@ export const CustomerContracts: React.FC<CustomerContractsProps> = ({ customer }
                   Period
                 </th>
                 <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Värde
+                  Månadskostnad
                 </th>
                 <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
@@ -92,7 +88,7 @@ export const CustomerContracts: React.FC<CustomerContractsProps> = ({ customer }
               {contracts.map((contract) => (
                 <tr key={contract.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {contract.name}
+                    {contract.operator}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {contract.type}
@@ -101,13 +97,11 @@ export const CustomerContracts: React.FC<CustomerContractsProps> = ({ customer }
                     {contract.startDate} - {contract.endDate || 'Tillsvidare'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatCurrency(contract.value)}
+                    {formatCurrency(contract.monthlyCost)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(contract.status)}`}>
-                      {contract.status === 'active' && 'Aktiv'}
-                      {contract.status === 'expired' && 'Utgången'}
-                      {contract.status === 'pending' && 'Väntande'}
+                      {STATUS_TRANSLATIONS[contract.status]}
                     </span>
                   </td>
                 </tr>
@@ -121,34 +115,30 @@ export const CustomerContracts: React.FC<CustomerContractsProps> = ({ customer }
 
       <Dialog
         open={isOpen}
-        onClose={() => setIsOpen(false)}
-        className="fixed inset-0 z-10 overflow-y-auto"
+        onClose={closeModal}
+        className="relative z-50"
       >
-        <div className="flex items-center justify-center min-h-screen">
-          <Dialog.Overlay className="fixed inset-0 bg-black opacity-30" />
-          
-          <div className="relative bg-white rounded-lg max-w-md w-full mx-4 p-6">
-            <Dialog.Title className="text-lg font-medium text-gray-900">
-              Lägg till nytt avtal
+        <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <Dialog.Panel className="mx-auto max-w-sm rounded bg-white p-6">
+            <Dialog.Title className="text-lg font-medium leading-6 text-gray-900">
+              Lägg till nytt kontrakt
             </Dialog.Title>
-            
             <div className="mt-4">
               <p className="text-gray-500">Funktionalitet kommer snart...</p>
             </div>
 
             <div className="mt-6 flex justify-end">
               <button
-                onClick={() => setIsOpen(false)}
+                onClick={closeModal}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
               >
                 Stäng
               </button>
             </div>
-          </div>
+          </Dialog.Panel>
         </div>
       </Dialog>
     </div>
   );
 };
-
-export default CustomerContracts;

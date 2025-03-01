@@ -1,6 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { format } from 'date-fns';
-import { sv } from 'date-fns/locale';
+import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 
 interface ChartData {
   name: string;
@@ -29,7 +27,13 @@ interface RealtimeData {
   };
 }
 
-const RealtimeContext = createContext<RealtimeData | undefined>(undefined);
+interface RealtimeContextValue {
+  data: RealtimeData;
+  isLoading: boolean;
+  error: Error | null;
+}
+
+const RealtimeContext = createContext<RealtimeContextValue | undefined>(undefined);
 
 // Simulerad data för demonstration
 const generateRandomData = (): RealtimeData => {
@@ -75,29 +79,65 @@ interface RealtimeProviderProps {
   children: ReactNode;
 }
 
-export function RealtimeProvider({ children }: RealtimeProviderProps) {
+export const RealtimeProvider = ({ children }: RealtimeProviderProps) => {
   const [data, setData] = useState<RealtimeData>(generateRandomData());
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
+    const loadInitialData = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const newData = generateRandomData();
+        setData(newData);
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error('Failed to load data'));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void loadInitialData();
+
     // Uppdatera data var 30:e sekund
     const interval = setInterval(() => {
-      setData(generateRandomData());
+      void loadInitialData();
     }, 30000);
 
     return () => clearInterval(interval);
   }, []);
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h3 className="text-lg font-medium text-red-600 mb-2">Ett fel uppstod</h3>
+          <p className="text-gray-500">{error.message}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <RealtimeContext.Provider value={data}>
+    <RealtimeContext.Provider value={{ data, isLoading, error }}>
       {children}
     </RealtimeContext.Provider>
   );
-}
+};
 
-export function useRealtime(): RealtimeData {
+export const useRealtime = (): RealtimeContextValue => {
   const context = useContext(RealtimeContext);
   if (context === undefined) {
     throw new Error('useRealtime must be used within a RealtimeProvider');
   }
   return context;
-}
+};

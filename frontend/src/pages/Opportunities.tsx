@@ -1,23 +1,26 @@
-import React, { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { FaCalendarAlt, FaClock, FaChartLine, FaFilter, FaSort, FaTag, FaBuilding, FaUser } from 'react-icons/fa';
-import { Opportunity } from '../types/opportunity';
+import type { Opportunity, OpportunityStage, OpportunityPriority } from '../types/opportunity';
+import { StatCard } from '../components/common/StatCard';
 
-interface OpportunityData {
-  id: string;
-  name: string;
-  value: number;
-  probability: number;
-  status: string;
-  expectedCloseDate: string;
-}
+type SortableFields = keyof Pick<Opportunity, 
+  'title' | 
+  'accountName' | 
+  'contactName' | 
+  'value' | 
+  'probability' | 
+  'expectedCloseDate' | 
+  'stage' | 
+  'priority'
+>;
 
-const initialOpportunities: Opportunity[] = [
+const initialOpportunities: readonly Opportunity[] = [
   {
-    id: 1,
+    id: '1',
     title: 'Ny CRM-implementation',
-    accountId: 1,
+    accountId: '1',
     accountName: 'Företag AB',
-    contactId: 1,
+    contactId: '1',
     contactName: 'Johan Andersson',
     value: 250000,
     probability: 75,
@@ -35,11 +38,11 @@ const initialOpportunities: Opportunity[] = [
     ]
   },
   {
-    id: 2,
+    id: '2',
     title: 'Uppgradering av IT-infrastruktur',
-    accountId: 2,
+    accountId: '2',
     accountName: 'Tech Solutions AB',
-    contactId: 2,
+    contactId: '2',
     contactName: 'Maria Svensson',
     value: 150000,
     probability: 50,
@@ -58,33 +61,67 @@ const initialOpportunities: Opportunity[] = [
   }
 ];
 
-const stageNames = {
+const stageNames: Record<OpportunityStage, string> = {
   prospecting: 'Prospektering',
   qualification: 'Kvalificering',
   proposal: 'Offert',
   negotiation: 'Förhandling',
   closed_won: 'Vunnen',
   closed_lost: 'Förlorad'
-};
+} as const;
 
-const priorityColors = {
+const priorityColors: Record<OpportunityPriority, string> = {
   low: 'bg-gray-100 text-gray-800',
   medium: 'bg-yellow-100 text-yellow-800',
   high: 'bg-red-100 text-red-800'
-};
+} as const;
 
-const Opportunities: React.FC = () => {
-  const [opportunities, setOpportunities] = useState<Opportunity[]>(initialOpportunities);
+export const Opportunities = (): JSX.Element => {
+  const [opportunities, setOpportunities] = useState<readonly Opportunity[]>(initialOpportunities);
   const [showNewOpportunityForm, setShowNewOpportunityForm] = useState(false);
   const [newOpportunity, setNewOpportunity] = useState<Partial<Opportunity>>({});
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortField, setSortField] = useState<keyof Opportunity>('expectedCloseDate');
+  const [sortField, setSortField] = useState<SortableFields>('expectedCloseDate');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-  const [filterStage, setFilterStage] = useState<string>('all');
-  const [filterPriority, setFilterPriority] = useState<string>('all');
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [filterStage, setFilterStage] = useState<OpportunityStage | 'all'>('all');
+  const [filterPriority, setFilterPriority] = useState<OpportunityPriority | 'all'>('all');
+  const [selectedTags, setSelectedTags] = useState<readonly string[]>([]);
 
-  // Statistik för StatCards
+  const formatCurrency = useCallback((value: number): string => {
+    return new Intl.NumberFormat('sv-SE', { style: 'currency', currency: 'SEK' }).format(value);
+  }, []);
+
+  const formatDate = useCallback((dateString: string): string => {
+    return new Date(dateString).toLocaleDateString('sv-SE');
+  }, []);
+
+  const handleSubmit = useCallback((e: React.FormEvent): void => {
+    e.preventDefault();
+    const newId = String(opportunities.length + 1);
+    const opportunity: Opportunity = {
+      id: newId,
+      title: newOpportunity.title || '',
+      accountId: newOpportunity.accountId || '',
+      accountName: newOpportunity.accountName || '',
+      contactId: newOpportunity.contactId || '',
+      contactName: newOpportunity.contactName || '',
+      value: newOpportunity.value || 0,
+      probability: newOpportunity.probability || 0,
+      expectedCloseDate: newOpportunity.expectedCloseDate || new Date().toISOString().split('T')[0],
+      stage: newOpportunity.stage || 'prospecting',
+      status: 'active',
+      priority: newOpportunity.priority || 'medium',
+      description: newOpportunity.description || '',
+      lastActivity: new Date().toISOString().split('T')[0],
+      nextActivity: newOpportunity.nextActivity || '',
+      tags: newOpportunity.tags || [],
+      products: newOpportunity.products || []
+    };
+    setOpportunities(prev => [...prev, opportunity]);
+    setNewOpportunity({});
+    setShowNewOpportunityForm(false);
+  }, [newOpportunity, opportunities.length]);
+
   const stats = {
     totalValue: opportunities
       .filter(o => o.status === 'active')
@@ -94,35 +131,26 @@ const Opportunities: React.FC = () => {
       (opportunities.filter(o => o.stage === 'closed_won').length /
         opportunities.filter(o => o.stage === 'closed_won' || o.stage === 'closed_lost').length) * 100
     ) || 0
-  };
+  } as const;
 
-  // Samla alla unika taggar
-  const allTags = Array.from(new Set(opportunities.flatMap(opp => opp.tags)));
+  const allTags = Array.from(new Set(opportunities.flatMap(opp => opp.tags))) as readonly string[];
 
-  const handleSort = (field: keyof Opportunity) => {
+  const handleSort = useCallback((field: SortableFields): void => {
     if (field === sortField) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
     } else {
       setSortField(field);
       setSortDirection('asc');
     }
-  };
+  }, [sortField]);
 
-  const toggleTag = (tag: string) => {
+  const toggleTag = useCallback((tag: string): void => {
     setSelectedTags(prev => 
       prev.includes(tag) 
         ? prev.filter(t => t !== tag)
         : [...prev, tag]
     );
-  };
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('sv-SE', { style: 'currency', currency: 'SEK' }).format(value);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('sv-SE');
-  };
+  }, []);
 
   const filteredAndSortedOpportunities = opportunities
     .filter(opportunity => {
@@ -142,14 +170,21 @@ const Opportunities: React.FC = () => {
     .sort((a, b) => {
       const aValue = a[sortField];
       const bValue = b[sortField];
-      const direction = sortDirection === 'asc' ? 1 : -1;
-      return aValue < bValue ? -direction : direction;
+      
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortDirection === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+      }
+      
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+      }
+      
+      return 0;
     });
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        {/* Header */}
         <div className="mb-8">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-bold text-gray-900">Affärsmöjligheter</h1>
@@ -162,7 +197,6 @@ const Opportunities: React.FC = () => {
             </button>
           </div>
 
-          {/* Statistik kort */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <StatCard
               title="Viktat säljvärde"
@@ -171,7 +205,7 @@ const Opportunities: React.FC = () => {
             />
             <StatCard
               title="Aktiva affärer"
-              value={stats.activeOpportunities}
+              value={stats.activeOpportunities.toString()}
               color="success"
             />
             <StatCard
@@ -181,7 +215,6 @@ const Opportunities: React.FC = () => {
             />
           </div>
 
-          {/* Sök, filter och taggar */}
           <div className="space-y-4">
             <div className="flex flex-col md:flex-row gap-4">
               <div className="flex-1">
@@ -198,7 +231,7 @@ const Opportunities: React.FC = () => {
               </div>
               <select
                 value={filterStage}
-                onChange={(e) => setFilterStage(e.target.value)}
+                onChange={(e) => setFilterStage(e.target.value as OpportunityStage | 'all')}
                 className="px-4 py-2 rounded-md border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="all">Alla stadier</option>
@@ -208,7 +241,7 @@ const Opportunities: React.FC = () => {
               </select>
               <select
                 value={filterPriority}
-                onChange={(e) => setFilterPriority(e.target.value)}
+                onChange={(e) => setFilterPriority(e.target.value as OpportunityPriority | 'all')}
                 className="px-4 py-2 rounded-md border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="all">Alla prioriteringar</option>
@@ -218,7 +251,6 @@ const Opportunities: React.FC = () => {
               </select>
             </div>
 
-            {/* Taggar */}
             <div className="flex flex-wrap gap-2">
               {allTags.map(tag => (
                 <button
@@ -238,7 +270,6 @@ const Opportunities: React.FC = () => {
           </div>
         </div>
 
-        {/* Affärsmöjlighetstabell */}
         <div className="bg-white shadow overflow-hidden sm:rounded-lg">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -330,12 +361,10 @@ const Opportunities: React.FC = () => {
                         <FaCalendarAlt className="text-gray-400 mr-2" />
                         {formatDate(opportunity.expectedCloseDate)}
                       </div>
-                      {opportunity.nextActivity && (
-                        <div className="text-sm text-gray-500 flex items-center">
-                          <FaClock className="text-gray-400 mr-2" />
-                          Nästa: {formatDate(opportunity.nextActivity)}
-                        </div>
-                      )}
+                      <div className="text-sm text-gray-500 flex items-center">
+                        <FaClock className="text-gray-400 mr-2" />
+                        Nästa: {formatDate(opportunity.nextActivity)}
+                      </div>
                     </div>
                   </td>
                 </tr>
@@ -344,35 +373,11 @@ const Opportunities: React.FC = () => {
           </table>
         </div>
 
-        {/* Modal för ny affärsmöjlighet */}
         {showNewOpportunityForm && (
           <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center">
             <div className="bg-white rounded-lg p-8 max-w-2xl w-full">
               <h2 className="text-xl font-semibold mb-4">Lägg till ny affärsmöjlighet</h2>
-              <form onSubmit={(e) => {
-                e.preventDefault();
-                const opportunity: Opportunity = {
-                  id: opportunities.length + 1,
-                  title: newOpportunity.title || '',
-                  accountId: newOpportunity.accountId || 0,
-                  accountName: newOpportunity.accountName || '',
-                  contactId: newOpportunity.contactId || 0,
-                  contactName: newOpportunity.contactName || '',
-                  value: newOpportunity.value || 0,
-                  probability: newOpportunity.probability || 0,
-                  expectedCloseDate: newOpportunity.expectedCloseDate || new Date().toISOString(),
-                  stage: 'prospecting',
-                  status: 'active',
-                  priority: newOpportunity.priority || 'medium',
-                  description: newOpportunity.description || '',
-                  lastActivity: new Date().toISOString(),
-                  tags: newOpportunity.tags || [],
-                  products: []
-                };
-                setOpportunities([...opportunities, opportunity]);
-                setShowNewOpportunityForm(false);
-                setNewOpportunity({});
-              }} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Formulärfält här... */}
               </form>
             </div>
@@ -382,5 +387,3 @@ const Opportunities: React.FC = () => {
     </div>
   );
 };
-
-export default Opportunities;

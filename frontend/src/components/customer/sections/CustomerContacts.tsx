@@ -1,20 +1,11 @@
 import React, { useState } from 'react';
-import { Customer, Contact } from '../../../types/customer';
+import { Customer, Contact, ContactFormData } from '../../../types/customer';
 import { Dialog } from '@headlessui/react';
 import { FaPlus, FaEnvelope, FaPhone, FaUser } from 'react-icons/fa';
 
 interface CustomerContactsProps {
   customer: Customer;
   onUpdate: (customer: Customer) => void;
-}
-
-interface ContactFormData {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  role: string;
-  isPrimary: boolean;
 }
 
 const emptyContact: ContactFormData = {
@@ -45,6 +36,18 @@ export const CustomerContacts: React.FC<CustomerContactsProps> = ({ customer, on
     onUpdate(updatedCustomer);
     setIsOpen(false);
     setFormData(emptyContact);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [id]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  const closeModal = () => {
+    setIsOpen(false);
   };
 
   return (
@@ -106,14 +109,13 @@ export const CustomerContacts: React.FC<CustomerContactsProps> = ({ customer, on
 
       <Dialog
         open={isOpen}
-        onClose={() => setIsOpen(false)}
-        className="fixed inset-0 z-10 overflow-y-auto"
+        onClose={closeModal}
+        className="relative z-50"
       >
-        <div className="flex items-center justify-center min-h-screen">
-          <Dialog.Overlay className="fixed inset-0 bg-black opacity-30" />
-
-          <div className="relative bg-white rounded-lg max-w-md w-full mx-4 p-6">
-            <Dialog.Title className="text-lg font-medium text-gray-900">
+        <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <Dialog.Panel className="mx-auto max-w-sm rounded bg-white p-6">
+            <Dialog.Title className="text-lg font-medium leading-6 text-gray-900">
               Lägg till ny kontakt
             </Dialog.Title>
 
@@ -127,7 +129,7 @@ export const CustomerContacts: React.FC<CustomerContactsProps> = ({ customer, on
                     type="text"
                     id="firstName"
                     value={formData.firstName}
-                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                    onChange={handleInputChange}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                     required
                   />
@@ -141,7 +143,7 @@ export const CustomerContacts: React.FC<CustomerContactsProps> = ({ customer, on
                     type="text"
                     id="lastName"
                     value={formData.lastName}
-                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                    onChange={handleInputChange}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                     required
                   />
@@ -155,7 +157,7 @@ export const CustomerContacts: React.FC<CustomerContactsProps> = ({ customer, on
                     type="email"
                     id="email"
                     value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    onChange={handleInputChange}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                     required
                   />
@@ -169,7 +171,7 @@ export const CustomerContacts: React.FC<CustomerContactsProps> = ({ customer, on
                     type="tel"
                     id="phone"
                     value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    onChange={handleInputChange}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                     required
                   />
@@ -182,8 +184,8 @@ export const CustomerContacts: React.FC<CustomerContactsProps> = ({ customer, on
                   <input
                     type="text"
                     id="role"
-                    value={formData.role}
-                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                    value={formData.role || ''}
+                    onChange={handleInputChange}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                   />
                 </div>
@@ -193,7 +195,7 @@ export const CustomerContacts: React.FC<CustomerContactsProps> = ({ customer, on
                     type="checkbox"
                     id="isPrimary"
                     checked={formData.isPrimary}
-                    onChange={(e) => setFormData({ ...formData, isPrimary: e.target.checked })}
+                    onChange={handleInputChange}
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                   />
                   <label htmlFor="isPrimary" className="ml-2 block text-sm text-gray-700">
@@ -205,20 +207,20 @@ export const CustomerContacts: React.FC<CustomerContactsProps> = ({ customer, on
               <div className="mt-6 flex justify-end space-x-3">
                 <button
                   type="button"
-                  onClick={() => setIsOpen(false)}
+                  onClick={closeModal}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
                 >
                   Avbryt
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md"
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
                   Spara
                 </button>
               </div>
             </form>
-          </div>
+          </Dialog.Panel>
         </div>
       </Dialog>
     </div>

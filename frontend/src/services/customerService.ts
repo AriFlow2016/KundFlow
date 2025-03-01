@@ -1,18 +1,18 @@
-import { Customer } from '../types/customer';
+import { type Customer } from '../types/customer';
 
 export class CustomerService {
-  private apiUrl = '/api/customers';
+  private readonly apiUrl = '/api/customers';
 
   async getCustomers(): Promise<Customer[]> {
     try {
       const response = await fetch(this.apiUrl);
       if (!response.ok) {
-        throw new Error('Failed to fetch customers');
+        throw new Error(`Failed to fetch customers: ${response.statusText}`);
       }
-      return await response.json();
+      return await response.json() as Customer[];
     } catch (error) {
       console.error('Error fetching customers:', error);
-      throw error;
+      throw error instanceof Error ? error : new Error('Unknown error occurred');
     }
   }
 
@@ -20,12 +20,12 @@ export class CustomerService {
     try {
       const response = await fetch(`${this.apiUrl}/${id}`);
       if (!response.ok) {
-        throw new Error('Failed to fetch customer');
+        throw new Error(`Failed to fetch customer: ${response.statusText}`);
       }
-      return await response.json();
+      return await response.json() as Customer;
     } catch (error) {
       console.error('Error fetching customer:', error);
-      throw error;
+      throw error instanceof Error ? error : new Error('Unknown error occurred');
     }
   }
 
@@ -39,12 +39,12 @@ export class CustomerService {
         body: JSON.stringify(customer),
       });
       if (!response.ok) {
-        throw new Error('Failed to create customer');
+        throw new Error(`Failed to create customer: ${response.statusText}`);
       }
-      return await response.json();
+      return await response.json() as Customer;
     } catch (error) {
       console.error('Error creating customer:', error);
-      throw error;
+      throw error instanceof Error ? error : new Error('Unknown error occurred');
     }
   }
 
@@ -58,12 +58,12 @@ export class CustomerService {
         body: JSON.stringify(customer),
       });
       if (!response.ok) {
-        throw new Error('Failed to update customer');
+        throw new Error(`Failed to update customer: ${response.statusText}`);
       }
-      return await response.json();
+      return await response.json() as Customer;
     } catch (error) {
       console.error('Error updating customer:', error);
-      throw error;
+      throw error instanceof Error ? error : new Error('Unknown error occurred');
     }
   }
 
@@ -73,11 +73,11 @@ export class CustomerService {
         method: 'DELETE',
       });
       if (!response.ok) {
-        throw new Error('Failed to delete customer');
+        throw new Error(`Failed to delete customer: ${response.statusText}`);
       }
     } catch (error) {
       console.error('Error deleting customer:', error);
-      throw error;
+      throw error instanceof Error ? error : new Error('Unknown error occurred');
     }
   }
 }

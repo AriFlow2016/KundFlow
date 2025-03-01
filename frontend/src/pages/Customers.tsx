@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Customer } from '../types/customer';
+import { useState, useEffect, useCallback } from 'react';
+import { type Customer } from '../types/customer';
 import { CustomerService } from '../services/customerService';
 import { CustomerList } from '../components/customer/CustomerList';
 import { CustomerDetails } from '../components/customer/CustomerDetails';
@@ -10,11 +10,7 @@ export const Customers = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadCustomers();
-  }, []);
-
-  const loadCustomers = async () => {
+  const loadCustomers = useCallback(async () => {
     try {
       setIsLoading(true);
       const customerService = new CustomerService();
@@ -27,25 +23,29 @@ export const Customers = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const handleCustomerSelect = (customer: Customer) => {
+  useEffect(() => {
+    void loadCustomers();
+  }, [loadCustomers]);
+
+  const handleCustomerSelect = useCallback((customer: Customer) => {
     setSelectedCustomer(customer);
-  };
+  }, []);
 
-  const handleCustomerUpdate = async (updatedCustomer: Customer) => {
+  const handleCustomerUpdate = useCallback(async (updatedCustomer: Customer) => {
     try {
       const customerService = new CustomerService();
       await customerService.updateCustomer(updatedCustomer);
-      setCustomers(customers.map(c => 
-        c.id === updatedCustomer.id ? updatedCustomer : c
-      ));
+      setCustomers(prevCustomers => 
+        prevCustomers.map(c => c.id === updatedCustomer.id ? updatedCustomer : c)
+      );
       setSelectedCustomer(updatedCustomer);
     } catch (err) {
       setError('Failed to update customer');
       console.error('Error updating customer:', err);
     }
-  };
+  }, []);
 
   if (isLoading) {
     return (
@@ -60,7 +60,7 @@ export const Customers = () => {
       <div className="text-center p-4">
         <div className="text-red-600 font-medium">{error}</div>
         <button
-          onClick={loadCustomers}
+          onClick={() => void loadCustomers()}
           className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
         >
           Försök igen

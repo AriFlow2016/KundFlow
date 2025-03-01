@@ -1,6 +1,16 @@
-import React from 'react';
-import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 import { Line } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  ChartOptions,
+  ChartData
+} from 'chart.js';
 
 ChartJS.register(
   CategoryScale,
@@ -13,21 +23,19 @@ ChartJS.register(
 );
 
 interface ConversionChartProps {
-  data: {
-    labels: string[];
-    values: number[];
-  };
+  labels: string[];
+  values: number[];
 }
 
-const ConversionChart: React.FC<ConversionChartProps> = ({ data }) => {
-  const chartData = {
-    labels: data.labels,
+export const ConversionChart = ({ labels, values }: ConversionChartProps): JSX.Element => {
+  const data: ChartData<'line'> = {
+    labels,
     datasets: [
       {
         label: 'Konverteringsgrad',
-        data: data.values,
+        data: values,
         fill: false,
-        borderColor: 'rgb(59, 130, 246)',
+        borderColor: 'rgb(75, 192, 192)',
         tension: 0.1,
       },
     ],
@@ -41,27 +49,27 @@ const ConversionChart: React.FC<ConversionChartProps> = ({ data }) => {
       },
       title: {
         display: true,
-        text: 'Konverteringsgrad',
+        text: 'Konverteringsgrad över tid',
       },
     },
     scales: {
       y: {
         beginAtZero: true,
         ticks: {
-          callback: (value: number) => `${value}%`,
+          callback: function(value: any) {
+            return value + '%';
+          },
         },
       },
     },
-  };
+  } satisfies ChartOptions<'line'>;
 
   return (
     <div className="bg-white shadow rounded-lg p-6">
       <h3 className="text-lg font-medium text-gray-900 mb-4">Affärsutfall</h3>
       <div className="h-72">
-        <Line data={chartData} options={options} />
+        <Line data={data} options={options} />
       </div>
     </div>
   );
 };
-
-export default ConversionChart;

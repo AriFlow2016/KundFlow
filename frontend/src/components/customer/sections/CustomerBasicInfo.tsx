@@ -1,82 +1,94 @@
-import React from 'react';
-import { Customer, CustomerType } from '../../../types/customer';
-import { FaMapMarkerAlt, FaBuilding, FaGlobe } from 'react-icons/fa';
+import { type Customer } from '../../../types/customer';
 
-interface CustomerBasicInfoProps {
+interface Props {
   customer: Customer;
-  onUpdate: (customer: Customer) => void;
+  onUpdate: (customer: Customer) => Promise<void>;
 }
 
-export const CustomerBasicInfo: React.FC<CustomerBasicInfoProps> = ({ customer }) => {
-  const renderAddress = (title: string, address: { street: string; postalCode: string; city: string; country: string }) => (
-    <div className="mt-4">
-      <h4 className="text-sm font-medium text-gray-500">{title}</h4>
-      <div className="mt-2 text-sm text-gray-900">
-        <p>{address.street}</p>
-        <p>{address.postalCode} {address.city}</p>
-        <p>{address.country}</p>
-      </div>
-    </div>
-  );
-
+export const CustomerBasicInfo = ({ customer, onUpdate }: Props): JSX.Element => {
   return (
     <div className="bg-white shadow rounded-lg p-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium text-gray-900">Grundinformation</h3>
+      <h2 className="text-lg font-medium text-gray-900 mb-4">Kundinformation</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <h3 className="text-sm font-medium text-gray-700">Företagsuppgifter</h3>
+          <dl className="mt-2 space-y-2">
+            <div>
+              <dt className="text-sm text-gray-500">Namn</dt>
+              <dd className="text-sm text-gray-900">{customer.name}</dd>
+            </div>
+            {customer.organizationNumber && (
+              <div>
+                <dt className="text-sm text-gray-500">Organisationsnummer</dt>
+                <dd className="text-sm text-gray-900">{customer.organizationNumber}</dd>
+              </div>
+            )}
+            {customer.website && (
+              <div>
+                <dt className="text-sm text-gray-500">Webbplats</dt>
+                <dd className="text-sm text-gray-900">
+                  <a href={customer.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-500">
+                    {customer.website}
+                  </a>
+                </dd>
+              </div>
+            )}
+          </dl>
+        </div>
+        <div>
+          <h3 className="text-sm font-medium text-gray-700">Adress</h3>
+          <dl className="mt-2 space-y-2">
+            <div>
+              <dt className="text-sm text-gray-500">Gatuadress</dt>
+              <dd className="text-sm text-gray-900">{customer.visitingAddress.street}</dd>
+            </div>
+            <div>
+              <dt className="text-sm text-gray-500">Postnummer</dt>
+              <dd className="text-sm text-gray-900">{customer.visitingAddress.postalCode}</dd>
+            </div>
+            <div>
+              <dt className="text-sm text-gray-500">Ort</dt>
+              <dd className="text-sm text-gray-900">{customer.visitingAddress.city}</dd>
+            </div>
+            <div>
+              <dt className="text-sm text-gray-500">Land</dt>
+              <dd className="text-sm text-gray-900">{customer.visitingAddress.country}</dd>
+            </div>
+          </dl>
+        </div>
       </div>
-
-      <div className="mt-4 grid grid-cols-1 gap-4">
-        <div>
-          <h4 className="text-sm font-medium text-gray-500">Namn</h4>
-          <p className="mt-2 text-sm text-gray-900">{customer.name}</p>
-        </div>
-
-        {customer.type === CustomerType.COMPANY && (
-          <div>
-            <h4 className="text-sm font-medium text-gray-500">Organisationsnummer</h4>
-            <p className="mt-2 text-sm text-gray-900">{customer.organizationNumber}</p>
-          </div>
-        )}
-
-        <div>
-          <h4 className="text-sm font-medium text-gray-500">Typ</h4>
-          <p className="mt-2 text-sm text-gray-900">
-            <span className="inline-flex items-center">
-              {customer.type === CustomerType.COMPANY ? (
-                <>
-                  <FaBuilding className="mr-1" />
-                  Företag
-                </>
-              ) : (
-                <>
-                  <FaGlobe className="mr-1" />
-                  Privatperson
-                </>
-              )}
-            </span>
-          </p>
-        </div>
-
-        {customer.type === CustomerType.COMPANY && customer.website && (
-          <div>
-            <h4 className="text-sm font-medium text-gray-500">Webbplats</h4>
-            <p className="mt-2 text-sm text-gray-900">
-              <a href={customer.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">
-                {customer.website}
-              </a>
-            </p>
-          </div>
-        )}
-
-        {customer.type === CustomerType.COMPANY && (
-          <>
-            {customer.visitingAddress && renderAddress("Besöksadress", customer.visitingAddress)}
-            {customer.mailingAddress && renderAddress("Postadress", customer.mailingAddress)}
-          </>
-        )}
+      <div className="mt-6">
+        <h3 className="text-sm font-medium text-gray-700">Ytterligare information</h3>
+        <dl className="mt-2 space-y-2">
+          {customer.industry && (
+            <div>
+              <dt className="text-sm text-gray-500">Bransch</dt>
+              <dd className="text-sm text-gray-900">{customer.industry}</dd>
+            </div>
+          )}
+          {customer.segment && (
+            <div>
+              <dt className="text-sm text-gray-500">Segment</dt>
+              <dd className="text-sm text-gray-900">{customer.segment}</dd>
+            </div>
+          )}
+          {customer.tags.length > 0 && (
+            <div>
+              <dt className="text-sm text-gray-500">Taggar</dt>
+              <dd className="mt-1 flex flex-wrap gap-2">
+                {customer.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </dd>
+            </div>
+          )}
+        </dl>
       </div>
     </div>
   );
 };
-
-export default CustomerBasicInfo;

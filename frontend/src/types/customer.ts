@@ -1,9 +1,9 @@
-export enum CustomerType {
+export const enum CustomerType {
   COMPANY = 'COMPANY',
   PRIVATE = 'PRIVATE'
 }
 
-export enum CustomerStatus {
+export const enum CustomerStatus {
   LEAD = 'LEAD',
   PROSPECT = 'PROSPECT',
   CUSTOMER = 'CUSTOMER',
@@ -11,7 +11,7 @@ export enum CustomerStatus {
 }
 
 export interface Contact {
-  id: string;
+  readonly id: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -27,12 +27,12 @@ export interface Address {
   country: string;
 }
 
-export interface ContactFormData extends Omit<Contact, 'id'> {
+export type ContactFormData = Omit<Contact, 'id'> & {
   id?: string;
-}
+};
 
 export interface Customer {
-  id: string;
+  readonly id: string;
   name: string;
   type: CustomerType;
   status: CustomerStatus;
@@ -40,58 +40,101 @@ export interface Customer {
   website?: string;
   visitingAddress?: Address;
   mailingAddress?: Address;
-  contacts: Contact[];
+  contacts: readonly Contact[];
   notes?: string;
-  createdAt: string;
-  updatedAt: string;
+  readonly createdAt: string;
+  readonly updatedAt: string;
 }
 
-export interface CustomerFormData extends Omit<Customer, 'id' | 'createdAt' | 'updatedAt' | 'contacts'> {
+export type CustomerFormData = Omit<Customer, 'id' | 'createdAt' | 'updatedAt' | 'contacts'> & {
   id?: string;
   contacts: ContactFormData[];
+};
+
+export const enum OperatorType {
+  TELIA = 'TELIA',
+  TELE2 = 'TELE2',
+  TELENOR = 'TELENOR',
+  TRE = 'TRE',
+  OTHER = 'OTHER'
 }
 
-export type OperatorType = 'TELIA' | 'TELE2' | 'TELENOR' | 'TRE' | 'OTHER';
-export type ContractType = 'MOBILE' | 'BROADBAND' | 'LANDLINE' | 'OTHER';
+export const enum ContractType {
+  MOBILE = 'MOBILE',
+  BROADBAND = 'BROADBAND',
+  LANDLINE = 'LANDLINE',
+  OTHER = 'OTHER'
+}
+
+export const enum ContractStatus {
+  ACTIVE = 'ACTIVE',
+  EXPIRED = 'EXPIRED',
+  PENDING = 'PENDING'
+}
 
 export interface Contract {
-  id: string;
+  readonly id: string;
   operator: OperatorType;
   type: ContractType;
   monthlyCost: number;
   startDate: string;
   endDate: string;
   documentUrl?: string;
-  status: 'ACTIVE' | 'EXPIRED' | 'PENDING';
+  status: ContractStatus;
+}
+
+export const enum CaseStatus {
+  OPEN = 'OPEN',
+  CLOSED = 'CLOSED',
+  IN_PROGRESS = 'IN_PROGRESS'
+}
+
+export const enum Priority {
+  LOW = 'LOW',
+  MEDIUM = 'MEDIUM',
+  HIGH = 'HIGH'
 }
 
 export interface Case {
-  id: string;
+  readonly id: string;
   title: string;
   description: string;
-  status: 'OPEN' | 'CLOSED' | 'IN_PROGRESS';
-  priority: 'LOW' | 'MEDIUM' | 'HIGH';
-  createdAt: string;
+  status: CaseStatus;
+  priority: Priority;
+  readonly createdAt: string;
   closedAt?: string;
   solution?: string;
 }
 
+export const enum ActivityType {
+  CALL = 'CALL',
+  EMAIL = 'EMAIL',
+  MEETING = 'MEETING',
+  NOTE = 'NOTE'
+}
+
 export interface Activity {
-  id: string;
-  type: 'CALL' | 'EMAIL' | 'MEETING' | 'NOTE';
+  readonly id: string;
+  type: ActivityType;
   title: string;
   description: string;
   date: string;
   duration?: number; // i minuter
-  createdBy: string;
+  readonly createdBy: string;
+}
+
+export const enum TaskStatus {
+  TODO = 'TODO',
+  IN_PROGRESS = 'IN_PROGRESS',
+  DONE = 'DONE'
 }
 
 export interface Task {
-  id: string;
+  readonly id: string;
   title: string;
   description: string;
   dueDate: string;
   assignedTo: string;
-  status: 'TODO' | 'IN_PROGRESS' | 'DONE';
-  priority: 'LOW' | 'MEDIUM' | 'HIGH';
+  status: TaskStatus;
+  priority: Priority;
 }

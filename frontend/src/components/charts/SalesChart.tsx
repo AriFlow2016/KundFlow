@@ -1,7 +1,15 @@
-import React from 'react';
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
-import { useRealtime } from '../../contexts/RealtimeContext';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ChartOptions,
+  ChartData
+} from 'chart.js';
 
 ChartJS.register(
   CategoryScale,
@@ -13,27 +21,19 @@ ChartJS.register(
 );
 
 interface SalesChartProps {
-  data: {
-    labels: string[];
-    values: number[];
-  };
+  labels: string[];
+  values: number[];
 }
 
-export const SalesChart: React.FC<SalesChartProps> = () => {
-  const { charts } = useRealtime();
-  const data = {
-    labels: charts.sales.map((sale) => sale.name),
-    values: charts.sales.map((sale) => sale.actual),
-  };
-
-  const chartData = {
-    labels: data.labels,
+export const SalesChart = ({ labels, values }: SalesChartProps): JSX.Element => {
+  const data: ChartData<'bar'> = {
+    labels,
     datasets: [
       {
         label: 'Försäljning',
-        data: data.values,
-        backgroundColor: 'rgba(54, 162, 235, 0.5)',
-        borderColor: 'rgb(54, 162, 235)',
+        data: values,
+        backgroundColor: 'rgba(59, 130, 246, 0.5)',
+        borderColor: 'rgb(59, 130, 246)',
         borderWidth: 1,
       },
     ],
@@ -47,24 +47,24 @@ export const SalesChart: React.FC<SalesChartProps> = () => {
       },
       title: {
         display: true,
-        text: 'Försäljning per månad',
+        text: 'Försäljning över tid',
       },
     },
     scales: {
       y: {
         beginAtZero: true,
         ticks: {
-          callback: (value: number) => `${value.toLocaleString()} kr`,
+          callback: function(value: any) {
+            return value + ' kr';
+          },
         },
       },
     },
-  };
+  } satisfies ChartOptions<'bar'>;
 
   return (
     <div className="bg-white p-4 rounded-lg shadow">
-      <Bar data={chartData} options={options} />
+      <Bar data={data} options={options} />
     </div>
   );
 };
-
-export default SalesChart;
