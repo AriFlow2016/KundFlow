@@ -3,8 +3,9 @@ services:
   - type: web
     name: kundflow-frontend
     env: static
-    buildCommand: cd frontend && npm install && npm run build
-    staticPublishPath: ./frontend/dist
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    rootDir: frontend
     envVars:
       - key: NODE_VERSION
         value: 18.x
@@ -19,8 +20,9 @@ services:
   - type: web
     name: kundflow-backend
     env: node
-    buildCommand: cd backend && npm install && npm run build
-    startCommand: cd backend && npm run start
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    rootDir: backend
     envVars:
       - key: NODE_VERSION
         value: 18.x
