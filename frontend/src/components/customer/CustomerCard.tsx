@@ -1,16 +1,11 @@
-import React, { useState, useMemo } from 'react';
-import { Tab } from '@headlessui/react';
-import { FaUser, FaFileContract, FaFolder, FaCalendar, FaTasks, FaTimes } from 'react-icons/fa';
-import ProspectInfo from './sections/ProspectInfo';
-import CustomerContracts from './sections/CustomerContracts';
+import React from 'react';
+import { Customer } from '../../types/customer';
+import CustomerBasicInfo from './sections/CustomerBasicInfo';
+import CustomerContacts from './sections/CustomerContacts';
+import { CustomerContracts } from './sections/CustomerContracts';
 import CustomerCases from './sections/CustomerCases';
 import CustomerActivities from './sections/CustomerActivities';
 import CustomerTasks from './sections/CustomerTasks';
-
-interface Customer {
-  id: string;
-  [key: string]: any;
-}
 
 interface CustomerCardProps {
   customer: Customer;
@@ -18,23 +13,7 @@ interface CustomerCardProps {
   onClose?: () => void;
 }
 
-interface TabItem {
-  name: string;
-  Component: React.ComponentType<{ customer: Customer; onUpdate: (customer: Customer) => void }>;
-  icon: React.ComponentType;
-}
-
-const CustomerCard: React.FC<CustomerCardProps> = ({ customer, onUpdate, onClose }) => {
-  const [selectedIndex, setSelectedIndex] = useState(0);
-
-  const tabs = useMemo<TabItem[]>(() => [
-    { name: 'Prospekt', Component: ProspectInfo, icon: FaUser },
-    { name: 'Avtal', Component: CustomerContracts, icon: FaFileContract },
-    { name: 'Ärenden', Component: CustomerCases, icon: FaFolder },
-    { name: 'Aktiviteter', Component: CustomerActivities, icon: FaCalendar },
-    { name: 'Uppgifter', Component: CustomerTasks, icon: FaTasks },
-  ], []);
-
+export const CustomerCard: React.FC<CustomerCardProps> = ({ customer, onUpdate, onClose }) => {
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
       <div className="relative top-20 mx-auto p-5 border w-4/5 shadow-lg rounded-md bg-white">
@@ -53,36 +32,14 @@ const CustomerCard: React.FC<CustomerCardProps> = ({ customer, onUpdate, onClose
           )}
         </div>
 
-        <Tab.Group selectedIndex={selectedIndex} onChange={setSelectedIndex}>
-          <Tab.List className="flex space-x-1 rounded-xl bg-blue-900/20 p-1">
-            {tabs.map((tab) => (
-              <Tab
-                key={tab.name}
-                className={({ selected }) =>
-                  `w-full rounded-lg py-2.5 text-sm font-medium leading-5 
-                  ${selected
-                    ? 'bg-white text-blue-700 shadow'
-                    : 'text-gray-700 hover:bg-white/[0.12] hover:text-blue-600'
-                  } flex items-center justify-center space-x-2`
-                }
-              >
-                <tab.icon className="h-4 w-4" />
-                <span>{tab.name}</span>
-              </Tab>
-            ))}
-          </Tab.List>
-
-          <Tab.Panels className="mt-4">
-            {tabs.map(({ name, Component }) => (
-              <Tab.Panel
-                key={name}
-                className="rounded-xl bg-white p-3"
-              >
-                <Component customer={customer} onUpdate={onUpdate} />
-              </Tab.Panel>
-            ))}
-          </Tab.Panels>
-        </Tab.Group>
+        <div className="space-y-6">
+          <CustomerBasicInfo customer={customer} onUpdate={onUpdate} />
+          <CustomerContacts customer={customer} onUpdate={onUpdate} />
+          <CustomerContracts customer={customer} />
+          <CustomerCases customer={customer} />
+          <CustomerActivities customer={customer} />
+          <CustomerTasks customer={customer} />
+        </div>
       </div>
     </div>
   );

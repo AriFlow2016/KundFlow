@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import { Customer } from '../../../types/customer';
-import { FaBuilding, FaGlobe, FaMapMarkerAlt, FaPhone, FaEnvelope } from 'react-icons/fa';
+import { Customer, CustomerType } from '../../../types/customer';
+import { FaUser, FaBuilding, FaMapMarkerAlt, FaGlobe, FaPhone, FaEnvelope } from 'react-icons/fa';
 
 interface CustomerBasicInfoProps {
   customer: Customer;
   onUpdate: (customer: Customer) => void;
 }
 
-export default function CustomerBasicInfo({ customer, onUpdate }: CustomerBasicInfoProps) {
+export const CustomerBasicInfo: React.FC<CustomerBasicInfoProps> = ({ customer, onUpdate }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState(customer);
 
@@ -187,4 +187,6 @@ export default function CustomerBasicInfo({ customer, onUpdate }: CustomerBasicI
       </div>
     </div>
   );
-}
+};
+
+export default CustomerBasicInfo;
