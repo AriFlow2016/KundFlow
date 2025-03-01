@@ -9,7 +9,7 @@ services:
       - key: NODE_VERSION
         value: 18.x
       - key: VITE_API_URL
-        value: https://api.kundflow.se
+        sync: false
     routes:
       - type: rewrite
         source: /*
@@ -36,5 +36,9 @@ services:
         value: kundflow-contracts
       - key: AWS_TEXTRACT_BUCKET
         value: kundflow-textract
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
     healthCheckPath: /api/health
     autoDeploy: true
