@@ -1,0 +1,110 @@
+"use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.OCRService = void 0;
+const tesseract_js_1 = require("tesseract.js");
+const client_textract_1 = require("@aws-sdk/client-textract");
+const fs_1 = require("fs");
+const textractClient = new client_textract_1.TextractClient({
+    region: process.env.AWS_REGION || 'eu-north-1',
+    credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || ''
+    }
+});
+class OCRService {
+    static extractTextWithTesseract(filePath) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const worker = yield (0, tesseract_js_1.createWorker)('swe');
+            const { data: { text } } = yield worker.recognize(filePath);
+            yield worker.terminate();
+            return text;
+        });
+    }
+    static extractTextWithTextract(filePath) {
+        return __awaiter(this, void 0, void 0, function* () {
+            var _a;
+            const fileBuffer = (0, fs_1.readFileSync)(filePath);
+            const command = new client_textract_1.AnalyzeDocumentCommand({
+                Document: {
+                    Bytes: fileBuffer
+                },
+                FeatureTypes: ['FORMS', 'TABLES']
+            });
+            try {
+                const response = yield textractClient.send(command);
+                let extractedText = '';
+                (_a = response.Blocks) === null || _a === void 0 ? void 0 : _a.forEach(block => {
+                    if (block.BlockType === 'LINE' && block.Text) {
+                        extractedText += block.Text + '\n';
+                    }
+                });
+                return extractedText;
+            }
+            catch (error) {
+                console.error('Error using Textract:', error);
+                throw error;
+            }
+        });
+    }
+    static extractMonthlyCost(text) {
+        const costRegex = /(?:månads(?:kostnad|avgift)|kostnad per månad)[\s:]*(\d+(?:\s*\d+)*(?:[,.]\d{2})?)/i;
+        const match = text.match(costRegex);
+        if (match) {
+            const cost = match[1].replace(/\s/g, '').replace(',', '.');
+            return parseFloat(cost);
+        }
+        return undefined;
+    }
+    static extractDates(text) {
+        const dateRegex = /(\d{4}[-/.]\d{2}[-/.]\d{2})/g;
+        const dates = text.match(dateRegex) || [];
+        return {
+            startDate: dates[0],
+            endDate: dates[dates.length - 1]
+        };
+    }
+    static extractPhoneNumbers(text) {
+        const phoneRegex = /(?:tel|telefon|mobil)?(?:[:.]|\s)*([+0][\d\s-]{8,})/gi;
+        const matches = text.matchAll(phoneRegex);
+        const phoneNumbers = [];
+        for (const match of matches) {
+            const number = match[1].replace(/[\s-]/g, '');
+            if (number.length >= 8) {
+                phoneNumbers.push(number);
+            }
+        }
+        return phoneNumbers;
+    }
+    static processDocument(filePath_1) {
+        return __awaiter(this, arguments, void 0, function* (filePath, useTextract = true) {
+            try {
+                const text = useTextract
+                    ? yield this.extractTextWithTextract(filePath)
+                    : yield this.extractTextWithTesseract(filePath);
+                const { startDate, endDate } = this.extractDates(text);
+                const monthlyCost = this.extractMonthlyCost(text);
+                const phoneNumbers = this.extractPhoneNumbers(text);
+                return {
+                    monthlyCost,
+                    startDate,
+                    endDate,
+                    phoneNumbers
+                };
+            }
+            catch (error) {
+                console.error('Error processing document:', error);
+                throw error;
+            }
+        });
+    }
+}
+exports.OCRService = OCRService;

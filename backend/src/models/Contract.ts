@@ -1,4 +1,4 @@
-import { Schema, model, Document } from 'mongoose';
+import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IContract extends Document {
   name: string;
@@ -6,46 +6,57 @@ export interface IContract extends Document {
   startDate: Date;
   endDate: Date;
   operator?: string;
-  status: 'ACTIVE' | 'TERMINATED' | 'RENEWED' | 'PENDING';
-  monthlyCost?: number;
+  status: 'active' | 'expired' | 'terminated';
+  monthlyCost: number;
   documentUrl?: string;
   documentName?: string;
-  documentKey?: string; // För S3-lagring
-  customerId: Schema.Types.ObjectId;
+  documentKey?: string; 
+  customerId: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
 
-const ContractSchema = new Schema<IContract>(
-  {
-    name: { type: String, required: true },
-    contractNumber: { type: String },
-    startDate: { type: Date, required: true },
-    endDate: { type: Date, required: true },
-    operator: { type: String },
-    status: {
-      type: String,
-      enum: ['ACTIVE', 'TERMINATED', 'RENEWED', 'PENDING'],
-      default: 'ACTIVE',
-    },
-    monthlyCost: { type: Number },
-    documentUrl: { type: String },
-    documentName: { type: String },
-    documentKey: { type: String },
-    customerId: { 
-      type: Schema.Types.ObjectId, 
-      ref: 'Customer',
-      required: true,
-      index: true
-    },
+const ContractSchema = new Schema<IContract>({
+  name: { type: String, required: true },
+  contractNumber: { type: String },
+  startDate: { type: Date, required: true },
+  endDate: { type: Date, required: true },
+  operator: { type: String },
+  status: {
+    type: String,
+    enum: ['active', 'expired', 'terminated'],
+    required: true,
+    default: 'active'
   },
-  {
-    timestamps: true,
-  }
-);
+  monthlyCost: {
+    type: Number,
+    required: true,
+    min: 0
+  },
+  documentUrl: { type: String },
+  documentName: { type: String },
+  documentKey: { type: String },
+  customerId: { 
+    type: Schema.Types.ObjectId, 
+    ref: 'Customer',
+    required: true,
+    index: true
+  },
+}, {
+  timestamps: true,
+});
 
 // Index för att snabbt hitta avtal som snart löper ut
 ContractSchema.index({ endDate: 1 });
+
+// Automatisk status-uppdatering baserat på datum
+ContractSchema.pre('save', function(next) {
+  const now = new Date();
+  if (this.endDate < now) {
+    this.status = 'expired';
+  }
+  next();
+});
 
 // Använd pre('deleteOne') istället för pre('remove')
 ContractSchema.pre('deleteOne', { document: true }, async function(next) {
@@ -60,4 +71,4 @@ ContractSchema.pre('deleteOne', { document: true }, async function(next) {
   next();
 });
 
-export const Contract = model<IContract>('Contract', ContractSchema);
+export const Contract = mongoose.model<IContract>('Contract', ContractSchema);

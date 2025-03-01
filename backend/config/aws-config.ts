@@ -1,6 +1,6 @@
+import { fromEnv } from '@aws-sdk/credential-providers';
 import { S3Client } from '@aws-sdk/client-s3';
 import { TextractClient } from '@aws-sdk/client-textract';
-import { fromEnv } from '@aws-sdk/credential-providers';
 
 // Grundkonfiguration
 const getAwsConfig = () => {
@@ -19,30 +19,20 @@ const getAwsConfig = () => {
   };
 };
 
-// S3 konfiguration (Stockholm)
-export const S3_CONFIG_STOCKHOLM = {
-  region: 'eu-north-1',
-  credentials: fromEnv()
-};
-
-// S3 och Textract konfiguration (Irland)
-export const S3_CONFIG_IRELAND = {
-  region: 'eu-west-1',
-  credentials: fromEnv()
-};
-
-export const AWS_CONFIG = S3_CONFIG_STOCKHOLM;
-
 export const S3_CONFIG = {
-  bucket: 'ariflow-documents',
-  textractBucket: 'ariflow-textract'
+  region: process.env.AWS_REGION || 'eu-north-1',
+  bucket: process.env.AWS_S3_BUCKET || 'kundflow-contracts',
+  textractBucket: process.env.AWS_TEXTRACT_BUCKET || 'kundflow-textract'
 };
 
-// Initiera S3-klient i Stockholm för huvudbucketen
-export const s3Client = new S3Client(S3_CONFIG_STOCKHOLM);
+// S3 Client för Stockholm-regionen (eu-north-1)
+export const s3Client = new S3Client({
+  region: S3_CONFIG.region,
+  credentials: fromEnv()
+});
 
-// Initiera S3-klient i Irland för Textract
-export const s3ClientIreland = new S3Client(S3_CONFIG_IRELAND);
-
-// Initiera Textract-klient i Irland
-export const textractClient = new TextractClient(S3_CONFIG_IRELAND);
+// Textract Client för Ireland-regionen (eu-west-1)
+export const textractClient = new TextractClient({
+  region: 'eu-west-1', // Textract är inte tillgängligt i Stockholm
+  credentials: fromEnv()
+});

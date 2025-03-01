@@ -1,38 +1,37 @@
-import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { S3_CONFIG } from '../config/aws-config';
+import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { createReadStream } from 'fs';
+import { s3Client } from '../../config/aws-config';
 
 export class S3Service {
-  private s3Client: S3Client;
+  async uploadFile(filePath: string, key: string): Promise<string> {
+    try {
+      const fileStream = createReadStream(filePath);
+      
+      const uploadParams = {
+        Bucket: process.env.AWS_S3_BUCKET,
+        Key: key,
+        Body: fileStream
+      };
 
-  constructor() {
-    this.s3Client = new S3Client({
-      region: S3_CONFIG.region,
-      credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || ''
-      }
-    });
+      await s3Client.send(new PutObjectCommand(uploadParams));
+      return `https://${process.env.AWS_S3_BUCKET}.s3.amazonaws.com/${key}`;
+    } catch (error) {
+      console.error('Error uploading to S3:', error);
+      throw new Error('Failed to upload file to S3');
+    }
   }
 
-  async uploadFile(file: Express.Multer.File, key: string): Promise<string> {
-    const command = new PutObjectCommand({
-      Bucket: S3_CONFIG.bucket,
-      Key: key,
-      Body: file.buffer,
-      ContentType: file.mimetype
-    });
+  async deleteFile(key: string): Promise<void> {
+    try {
+      const deleteParams = {
+        Bucket: process.env.AWS_S3_BUCKET,
+        Key: key
+      };
 
-    await this.s3Client.send(command);
-    return key;
-  }
-
-  async generatePresignedUrl(key: string): Promise<string> {
-    const command = new GetObjectCommand({
-      Bucket: S3_CONFIG.bucket,
-      Key: key
-    });
-
-    return await getSignedUrl(this.s3Client, command, { expiresIn: 3600 });
+      await s3Client.send(new DeleteObjectCommand(deleteParams));
+    } catch (error) {
+      console.error('Error deleting from S3:', error);
+      throw new Error('Failed to delete file from S3');
+    }
   }
 }

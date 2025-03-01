@@ -1,6 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import crypto from 'crypto';
+import { UploadedFile } from '../types/file';
 
 const UPLOAD_DIR = path.join(__dirname, '../../uploads');
 
@@ -17,7 +18,7 @@ const initializeUploadDir = async () => {
 initializeUploadDir();
 
 export const localFileService = {
-  async uploadFile(file: Express.Multer.File, customerId: string): Promise<{ key: string; url: string }> {
+  async uploadFile(file: Express.Multer.File): Promise<UploadedFile> {
     const fileExtension = path.extname(file.originalname);
     const randomString = crypto.randomBytes(16).toString('hex');
     const fileName = `${randomString}${fileExtension}`;
@@ -30,6 +31,9 @@ export const localFileService = {
     return {
       key: fileName,
       url: `/api/uploads/${fileName}`,
+      originalName: file.originalname,
+      mimeType: file.mimetype,
+      size: file.size
     };
   },
 
@@ -39,10 +43,17 @@ export const localFileService = {
       await fs.unlink(filePath);
     } catch (error) {
       console.error('Error deleting file:', error);
+      throw new Error('Failed to delete file');
     }
   },
 
   async getFilePath(key: string): Promise<string> {
-    return path.join(UPLOAD_DIR, key);
+    const filePath = path.join(UPLOAD_DIR, key);
+    try {
+      await fs.access(filePath);
+      return filePath;
+    } catch {
+      throw new Error('File not found');
+    }
   },
 };

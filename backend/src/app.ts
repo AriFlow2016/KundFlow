@@ -1,68 +1,33 @@
-import express, { Request, Response, NextFunction } from 'express';
+import express from 'express';
 import cors from 'cors';
+import mongoose from 'mongoose';
+import contractRoutes from './routes/contractRoutes';
+import testRoutes from './routes/testRoutes';
+import healthRoutes from './routes/healthRoutes';
+import { errorHandler } from './middleware/error';
 import path from 'path';
-import { upload, uploadToS3 } from '../services/uploadService';
-import { textractService } from '../services/textractService';
 
-export const app = express();
+const app = express();
 
 // Middleware
-app.use(cors({
-    origin: '*',
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
-}));
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Statiska filer
-app.use(express.static(path.join(__dirname, '..'))); // Serve files from backend root
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
-// Serve test-upload.html
-app.get('/', (req: Request, res: Response) => {
-    res.sendFile(path.join(__dirname, '../test-upload.html'));
-});
+// Routes
+app.use('/api/contracts', contractRoutes);
+app.use('/api/test', testRoutes);
+app.use('/api/health', healthRoutes);
 
-// Hantera filuppladdning
-app.post('/upload', upload.single('file'), async (req: Request, res: Response) => {
-    try {
-        if (!req.file) {
-            throw new Error('Ingen fil hittades');
-        }
+// Error handling
+app.use(errorHandler);
 
-        console.log('Fil mottagen:', {
-            originalname: req.file.originalname,
-            path: req.file.path,
-            mimetype: req.file.mimetype
-        });
-
-        // Ladda upp till S3
-        const uploadResult = await uploadToS3(req.file, 'test-customer');
-        console.log('Fil uppladdad till S3:', uploadResult);
-
-        // Extrahera text med Textract
-        const extractedText = await textractService.extractTextFromS3(uploadResult.key, req.file.path);
-        console.log('Text extraherad:', extractedText);
-
-        res.json({
-            success: true,
-            data: {
-                ...uploadResult,
-                extractedText
-            }
-        });
-    } catch (error) {
-        console.error('Fel vid filhantering:', error);
-        res.status(500).json({
-            error: 'Fel vid filhantering',
-            details: error.message
-        });
-    }
-});
-
-app.use((error: Error, req: Request, res: Response, next: NextFunction) => {
-    console.error('Error:', error);
-    res.status(500).json({ message: error.message });
-});
+// MongoDB connection
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/kundflow')
+  .then(() => console.log('Connected to MongoDB'))
+  .catch(err => console.error('MongoDB connection error:', err));
 
 export default app;
