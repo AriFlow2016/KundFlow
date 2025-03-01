@@ -1,9 +1,7 @@
 services:
   # Frontend Service
-  - type: web
+  - type: static
     name: kundflow-frontend
-    env: static
-    rootDir: frontend
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist
     envVars:
@@ -15,12 +13,16 @@ services:
       - type: rewrite
         source: /*
         destination: /index.html
+    pullRequestPreviewsEnabled: true
+    buildFilter:
+      paths:
+        - frontend/**
+    rootDir: frontend
 
   # Backend Service
   - type: web
     name: kundflow-backend
     env: node
-    rootDir: backend
     buildCommand: npm install && npm run build
     startCommand: npm run start
     envVars:
@@ -44,3 +46,7 @@ services:
         value: 3000
     healthCheckPath: /api/health
     autoDeploy: true
+    buildFilter:
+      paths:
+        - backend/**
+    rootDir: backend
