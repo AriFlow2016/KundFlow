@@ -1,4 +1,4 @@
-import { s3Client } from '../../config/aws-config';
+import { s3Client } from '../config/aws-config';
 import { PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 
 export class S3Service {

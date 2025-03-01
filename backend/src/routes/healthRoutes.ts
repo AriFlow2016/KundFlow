@@ -1,6 +1,6 @@
 import express, { Request, Response } from 'express';
 import mongoose from 'mongoose';
-import { s3Client } from '../../config/aws-config';
+import { s3Client } from '../config/aws-config';
 import { HeadBucketCommand } from '@aws-sdk/client-s3';
 
 const router = express.Router();

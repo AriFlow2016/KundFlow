@@ -1,30 +1,18 @@
 import express, { Request, Response } from 'express';
-import { auth, checkRole } from '../middleware/auth';
-import { upload } from '../../services/uploadService';
-import { TextractService } from '../../services/textractService';
+import { uploadFile, processUpload } from '../services/uploadService';
 
 const router = express.Router();
-const textractService = new TextractService();
 
-// Test-endpoint för filuppladdning och Textract
-router.post(
-  '/test-upload',
-  auth,
-  checkRole(['admin']),
-  upload.single('document'),
-  async (req: Request, res: Response) => {
-    try {
-      if (!req.file) {
-        return res.status(400).json({ message: 'No file uploaded' });
-      }
-
-      const result = await textractService.extractTextFromS3(req.file.filename);
-      res.json(result);
-    } catch (error) {
-      console.error('Test upload error:', error);
-      res.status(500).json({ message: 'Error processing file' });
-    }
+// Test route för filuppladdning
+router.post('/upload', uploadFile, async (req: Request, res: Response) => {
+  try {
+    const result = await processUpload(req);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
-);
+});
 
 export default router;

@@ -1,36 +1,42 @@
+import multer from 'multer';
+import { S3Service } from './s3Service';
+import { TextractService } from './textractService';
 import { Request } from 'express';
-import multer, { FileFilterCallback } from 'multer';
-import path from 'path';
-import fs from 'fs';
 
-// Konfigurera multer för temporär fillagring
-const storage = multer.diskStorage({
-  destination: (req: Request, file: Express.Multer.File, callback: (error: Error | null, destination: string) => void) => {
-    const uploadDir = path.join(__dirname, '../../uploads/temp');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    callback(null, uploadDir);
-  },
-  filename: (req: Request, file: Express.Multer.File, callback: (error: Error | null, filename: string) => void) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    callback(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
+const s3Service = new S3Service();
+const textractService = new TextractService();
 
-const fileFilter = (req: Request, file: Express.Multer.File, callback: FileFilterCallback) => {
-  const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-  if (allowedTypes.includes(file.mimetype)) {
-    callback(null, true);
-  } else {
-    callback(new Error('Invalid file type'));
-  }
-};
-
-export const upload = multer({
-  storage,
-  fileFilter,
+const storage = multer.memoryStorage();
+const upload = multer({ 
+  storage: storage,
   limits: {
-    fileSize: 10 * 1024 * 1024 // 10MB
+    fileSize: 5 * 1024 * 1024 // 5MB limit
   }
 });
+
+export const uploadFile = upload.single('file');
+
+export const processUpload = async (req: Request) => {
+  if (!req.file) {
+    throw new Error('No file uploaded');
+  }
+
+  const file = req.file;
+  const key = `${Date.now()}-${file.originalname}`;
+  
+  // Upload to S3
+  const s3Url = await s3Service.uploadFile(file, key);
+  
+  // Process with Textract if it's a PDF
+  let textractResult = null;
+  if (file.mimetype === 'application/pdf') {
+    const textractKey = `textract/${key}`;
+    textractResult = await textractService.processDocument(file, textractKey);
+  }
+
+  return {
+    originalName: file.originalname,
+    s3Url,
+    textractResult
+  };
+};
