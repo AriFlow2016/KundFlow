@@ -2,30 +2,18 @@ import {
   TextractClient, 
   StartDocumentTextDetectionCommand, 
   GetDocumentTextDetectionCommand,
-  Block
+  TextractClientConfig,
+  DocumentLocation,
+  GetDocumentTextDetectionCommandOutput,
+  BlockType
 } from "@aws-sdk/client-textract";
-import { textractClient } from '../config/aws-config';
 import { S3Service } from './s3Service';
 import { Express } from 'express';
 
-export interface Block {
+interface TextractBlock {
   BlockType?: string;
   Text?: string;
   Confidence?: number;
-  EntityTypes?: string[];
-  RowIndex?: number;
-  ColumnIndex?: number;
-  RowSpan?: number;
-  ColumnSpan?: number;
-  Page?: number;
-  Id?: string;
-  Relationships?: Array<{ Type: string; Ids: string[] }>;
-}
-
-export interface ExtractedText {
-  text: string;
-  confidence: number;
-  keyValuePairs: Record<string, string>;
 }
 
 export class TextractService {
@@ -33,7 +21,10 @@ export class TextractService {
   private s3Service: S3Service;
 
   constructor() {
-    this.textractClient = textractClient;
+    const config: TextractClientConfig = {
+      region: process.env.AWS_REGION || 'eu-north-1'
+    };
+    this.textractClient = new TextractClient(config);
     this.s3Service = new S3Service();
   }
 
@@ -43,27 +34,29 @@ export class TextractService {
       await this.s3Service.uploadFile(file, key, true);
 
       // Start Textract job
-      const startCommand = new StartDocumentTextDetectionCommand({
-        DocumentLocation: {
-          S3Object: {
-            Bucket: process.env.AWS_S3_TEXTRACT_BUCKET,
-            Name: key
-          }
+      const documentLocation: DocumentLocation = {
+        S3Object: {
+          Bucket: process.env.AWS_S3_TEXTRACT_BUCKET,
+          Name: key
         }
+      };
+
+      const startCommand = new StartDocumentTextDetectionCommand({
+        DocumentLocation: documentLocation
       });
 
-      const { JobId } = await this.textractClient.send(startCommand);
+      const startResponse = await this.textractClient.send(startCommand);
       
-      if (!JobId) {
+      if (!startResponse.JobId) {
         throw new Error('Failed to start Textract job');
       }
 
       // Wait for job completion
-      await this.waitForJobCompletion(JobId);
+      await this.waitForJobCompletion(startResponse.JobId);
 
       // Get results
       const getCommand = new GetDocumentTextDetectionCommand({
-        JobId
+        JobId: startResponse.JobId
       });
 
       const result = await this.textractClient.send(getCommand);
@@ -73,67 +66,6 @@ export class TextractService {
       
       return textContent;
 
-    } catch (error) {
-      console.error('Error in Textract processing:', error);
-      throw new Error('Failed to process document with Textract');
-    }
-  }
-
-  async extractTextFromS3(key: string): Promise<ExtractedText> {
-    try {
-      const startCommand = new StartDocumentAnalysisCommand({
-        DocumentLocation: {
-          S3Object: {
-            Bucket: process.env.AWS_S3_BUCKET || '',
-            Name: key
-          }
-        },
-        FeatureTypes: ['FORMS', 'TABLES']
-      });
-
-      const response = await this.textractClient.send(startCommand);
-
-      if (!response.JobId) {
-        throw new Error('No JobId received from Textract');
-      }
-
-      await this.waitForJobCompletion(response.JobId);
-
-      const getDocumentCommand = new GetDocumentAnalysisCommand({
-        JobId: response.JobId
-      });
-
-      const result = await this.textractClient.send(getDocumentCommand);
-      
-      const blocks = result.Blocks || [];
-      const text = blocks
-        .filter(block => block.BlockType === 'LINE')
-        .map(block => block.Text)
-        .join('\n');
-
-      const confidence = blocks.reduce((acc, block) => acc + (block.Confidence || 0), 0) / blocks.length;
-
-      const keyValuePairs: Record<string, string> = {};
-      blocks
-        .filter(block => block.BlockType === 'KEY_VALUE_SET')
-        .forEach(block => {
-          if (block.EntityTypes?.includes('KEY')) {
-            const value = blocks.find(b => 
-              b.BlockType === 'KEY_VALUE_SET' && 
-              b.EntityTypes?.includes('VALUE') &&
-              b.Id === block.Relationships?.[0]?.Ids?.[0]
-            );
-            if (block.Text && value?.Text) {
-              keyValuePairs[block.Text] = value.Text;
-            }
-          }
-        });
-
-      return {
-        text,
-        confidence,
-        keyValuePairs
-      };
     } catch (error) {
       console.error('Error in Textract processing:', error);
       throw new Error('Failed to process document with Textract');
@@ -164,10 +96,10 @@ export class TextractService {
     throw new Error('Textract job timed out');
   }
 
-  private processTextractResponse(response: { Blocks?: Block[] }): string {
+  private processTextractResponse(response: GetDocumentTextDetectionCommandOutput): string {
     let text = '';
     if (response.Blocks) {
-      response.Blocks.forEach((block: Block) => {
+      response.Blocks.forEach((block: TextractBlock) => {
         if (block.BlockType === 'LINE' && block.Text) {
           text += block.Text + '\n';
         }
@@ -176,5 +108,3 @@ export class TextractService {
     return text;
   }
 }
-
-export const textractService = new TextractService();
