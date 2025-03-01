@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import path from 'path';
 import { upload, uploadToS3 } from '../services/uploadService';
@@ -19,12 +19,12 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '..'))); // Serve files from backend root
 
 // Serve test-upload.html
-app.get('/', (req, res) => {
+app.get('/', (req: Request, res: Response) => {
     res.sendFile(path.join(__dirname, '../test-upload.html'));
 });
 
 // Hantera filuppladdning
-app.post('/upload', upload.single('file'), async (req, res) => {
+app.post('/upload', upload.single('file'), async (req: Request, res: Response) => {
     try {
         if (!req.file) {
             throw new Error('Ingen fil hittades');
@@ -58,6 +58,11 @@ app.post('/upload', upload.single('file'), async (req, res) => {
             details: error.message
         });
     }
+});
+
+app.use((error: Error, req: Request, res: Response, next: NextFunction) => {
+    console.error('Error:', error);
+    res.status(500).json({ message: error.message });
 });
 
 export default app;

@@ -1,5 +1,5 @@
-import express from 'express';
-import multer from 'multer';
+import express, { Request, Response } from 'express';
+import multer, { FileFilterCallback } from 'multer';
 import { Contract } from '../models/Contract';
 import { localFileService } from '../services/localFileService';
 import { checkAuth, checkRole } from '../middleware/auth';
@@ -12,7 +12,7 @@ const upload = multer({
   limits: {
     fileSize: 10 * 1024 * 1024, // 10MB gräns
   },
-  fileFilter: (req, file, cb) => {
+  fileFilter: (req: Request, file: Express.Multer.File, cb: FileFilterCallback) => {
     const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'image/jpeg', 'image/png'];
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
@@ -30,7 +30,7 @@ router.get(
   '/customer/:customerId',
   checkAuth,
   validateObjectId('customerId'),
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     try {
       const contracts = await Contract.find({ customerId: req.params.customerId })
         .sort({ endDate: 1 });
@@ -48,7 +48,7 @@ router.post(
   checkAuth,
   checkRole(['admin', 'manager']),
   upload.single('document'),
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     try {
       const contractData = JSON.parse(req.body.contract);
       
@@ -83,7 +83,7 @@ router.put(
   checkRole(['admin', 'manager']),
   validateObjectId('id'),
   upload.single('document'),
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     try {
       const contract = await Contract.findById(req.params.id);
       if (!contract) {
@@ -130,7 +130,7 @@ router.delete(
   checkAuth,
   checkRole(['admin', 'manager']),
   validateObjectId('id'),
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     try {
       const contract = await Contract.findById(req.params.id);
       if (!contract) {

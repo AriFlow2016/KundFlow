@@ -1,4 +1,5 @@
-import multer from 'multer';
+import { Request } from 'express';
+import multer, { FileFilterCallback } from 'multer';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { s3Client, S3_CONFIG } from '../config/aws-config';
 import path from 'path';
@@ -7,7 +8,7 @@ import fs from 'fs';
 
 // Konfigurera multer för temporär fillagring
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
+    destination: (req: Request, file: Express.Multer.File, cb: FileFilterCallback) => {
         const uploadDir = path.join(__dirname, '../../uploads/temp');
         // Skapa uploads/temp mappen om den inte finns
         if (!fs.existsSync(uploadDir)) {
@@ -15,13 +16,24 @@ const storage = multer.diskStorage({
         }
         cb(null, uploadDir);
     },
-    filename: (req, file, cb) => {
+    filename: (req: Request, file: Express.Multer.File, cb: FileFilterCallback) => {
         const uniqueId = uuidv4();
         cb(null, uniqueId + '-' + file.originalname);
     }
 });
 
 export const upload = multer({ storage: storage });
+
+export interface FileUpload {
+  fieldname: string;
+  originalname: string;
+  encoding: string;
+  mimetype: string;
+  destination: string;
+  filename: string;
+  path: string;
+  size: number;
+}
 
 export async function uploadToS3(file: Express.Multer.File, customerId: string) {
     try {

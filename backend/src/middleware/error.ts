@@ -1,9 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
+import { MulterError } from 'multer';
 
-export const errorHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
-  console.error('Error:', err);
+export const errorHandler = (err: Error, req: Request, res: Response, next: NextFunction) => {
+  console.error(err);
 
-  if (err instanceof multer.MulterError) {
+  if (err instanceof MulterError) {
     if (err.code === 'LIMIT_FILE_SIZE') {
       return res.status(400).json({ message: 'Filen är för stor. Max storlek är 10MB.' });
     }
