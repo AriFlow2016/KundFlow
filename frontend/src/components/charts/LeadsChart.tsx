@@ -1,63 +1,64 @@
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
+import React from 'react';
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
+import { Line } from 'react-chartjs-2';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
   Tooltip,
-  ResponsiveContainer,
-} from 'recharts';
-import { useRealtime } from '../../contexts/RealtimeContext';
+  Legend
+);
 
-// Dummy-data för demonstration
-const data = [
-  { name: 'Jan', leads: 4, qualified: 2 },
-  { name: 'Feb', leads: 6, qualified: 3 },
-  { name: 'Mar', leads: 8, qualified: 5 },
-  { name: 'Apr', leads: 12, qualified: 7 },
-  { name: 'Maj', leads: 10, qualified: 6 },
-  { name: 'Jun', leads: 15, qualified: 8 },
-];
+interface LeadsChartProps {
+  data: {
+    labels: string[];
+    values: number[];
+  };
+}
 
-export default function LeadsChart() {
-  const { charts } = useRealtime();
+export const LeadsChart: React.FC<LeadsChartProps> = ({ data }) => {
+  const chartData = {
+    labels: data.labels,
+    datasets: [
+      {
+        label: 'Leads över tid',
+        data: data.values,
+        fill: false,
+        borderColor: 'rgb(75, 192, 192)',
+        tension: 0.1,
+      },
+    ],
+  };
+
+  const options = {
+    responsive: true,
+    plugins: {
+      legend: {
+        display: false,
+      },
+      title: {
+        display: true,
+        text: 'Leads över tid',
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: {
+          stepSize: 1,
+        },
+      },
+    },
+  };
 
   return (
-    <div className="bg-white shadow rounded-lg p-6">
-      <h3 className="text-lg font-medium text-gray-900 mb-4">Leads-trend</h3>
-      <div className="h-72">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart
-            data={charts.leads}
-            margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" />
-            <YAxis />
-            <Tooltip 
-              contentStyle={{ backgroundColor: 'white', borderRadius: '0.5rem' }}
-              formatter={(value: number) => [value, 'Antal']}
-              labelStyle={{ color: '#374151' }}
-            />
-            <Area
-              type="monotone"
-              dataKey="leads"
-              stackId="1"
-              stroke="#60A5FA"
-              fill="#93C5FD"
-              name="Nya leads"
-            />
-            <Area
-              type="monotone"
-              dataKey="qualified"
-              stackId="2"
-              stroke="#34D399"
-              fill="#6EE7B7"
-              name="Kvalificerade"
-            />
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>
+    <div className="bg-white p-4 rounded-lg shadow">
+      <Line data={chartData} options={options} />
     </div>
   );
-}
+};
+
+export default LeadsChart;
