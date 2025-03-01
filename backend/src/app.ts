@@ -17,6 +17,8 @@ const corsOptions = {
   allowedHeaders: ['Content-Type', 'Authorization']
 };
 
+console.log('CORS Origin:', process.env.CORS_ORIGIN);
+
 // Middleware
 app.use(cors(corsOptions));
 app.use(express.json());
