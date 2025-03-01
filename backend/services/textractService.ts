@@ -3,18 +3,19 @@ import {
     GetDocumentAnalysisCommand,
     TextractClient
 } from '@aws-sdk/client-textract';
-import { PutObjectCommand } from '@aws-sdk/client-s3';
-import { textractClient, s3IrelandClient, S3_CONFIG } from '../config/aws-config';
+import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { textractClient, s3ClientIreland, S3_CONFIG } from '../config/aws-config';
 import fs from 'fs';
 import path from 'path';
 
 interface ExtractedText {
-    rawText: string;
+    text: string;
     keyValuePairs: { [key: string]: string };
 }
 
 interface Block {
     Id: string;
+    Text?: string;
     Relationships?: Array<{ Type: string; Ids: string[] }>;
     [key: string]: any;
 }
@@ -49,7 +50,7 @@ export class TextractService {
             };
 
             console.log('Laddar upp fil till Textract-bucket med parametrar:', uploadParams);
-            await s3IrelandClient.send(new PutObjectCommand(uploadParams));
+            await s3ClientIreland.send(new PutObjectCommand(uploadParams));
             console.log('Fil uppladdad till Textract-bucket');
 
             // Starta asynkron dokumentanalys för PDF
@@ -95,7 +96,7 @@ export class TextractService {
             }
 
             // Extrahera text och key-value pairs från resultatet
-            const rawText = result?.Blocks
+            const text = result?.Blocks
                 ?.filter(block => block.BlockType === 'LINE')
                 .map(block => block.Text)
                 .join('\n') || '';
@@ -128,7 +129,7 @@ export class TextractService {
             });
 
             console.log('Textextraktion slutförd');
-            return { rawText, keyValuePairs };
+            return { text, keyValuePairs };
         } catch (error) {
             console.error('Detaljerat fel vid textextraktion:', error);
             throw error;
