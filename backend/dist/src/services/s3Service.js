@@ -10,21 +10,22 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.S3Service = void 0;
-const client_s3_1 = require("@aws-sdk/client-s3");
-const fs_1 = require("fs");
 const aws_config_1 = require("../../config/aws-config");
+const client_s3_1 = require("@aws-sdk/client-s3");
+const s3_request_presigner_1 = require("@aws-sdk/s3-request-presigner");
 class S3Service {
-    uploadFile(filePath, key) {
-        return __awaiter(this, void 0, void 0, function* () {
+    uploadFile(file_1, key_1) {
+        return __awaiter(this, arguments, void 0, function* (file, key, isTextract = false) {
             try {
-                const fileStream = (0, fs_1.createReadStream)(filePath);
-                const uploadParams = {
-                    Bucket: process.env.AWS_S3_BUCKET,
+                const bucket = isTextract ? process.env.AWS_S3_TEXTRACT_BUCKET : process.env.AWS_S3_BUCKET;
+                const command = new client_s3_1.PutObjectCommand({
+                    Bucket: bucket,
                     Key: key,
-                    Body: fileStream
-                };
-                yield aws_config_1.s3Client.send(new client_s3_1.PutObjectCommand(uploadParams));
-                return `https://${process.env.AWS_S3_BUCKET}.s3.amazonaws.com/${key}`;
+                    Body: file.buffer,
+                    ContentType: file.mimetype,
+                });
+                yield aws_config_1.s3Client.send(command);
+                return `https://${bucket}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
             }
             catch (error) {
                 console.error('Error uploading to S3:', error);
@@ -32,14 +33,32 @@ class S3Service {
             }
         });
     }
-    deleteFile(key) {
-        return __awaiter(this, void 0, void 0, function* () {
+    getSignedDownloadUrl(key_1) {
+        return __awaiter(this, arguments, void 0, function* (key, isTextract = false) {
             try {
-                const deleteParams = {
-                    Bucket: process.env.AWS_S3_BUCKET,
-                    Key: key
-                };
-                yield aws_config_1.s3Client.send(new client_s3_1.DeleteObjectCommand(deleteParams));
+                const bucket = isTextract ? process.env.AWS_S3_TEXTRACT_BUCKET : process.env.AWS_S3_BUCKET;
+                const command = new client_s3_1.GetObjectCommand({
+                    Bucket: bucket,
+                    Key: key,
+                });
+                const url = yield (0, s3_request_presigner_1.getSignedUrl)(aws_config_1.s3Client, command, { expiresIn: 3600 });
+                return url;
+            }
+            catch (error) {
+                console.error('Error generating signed URL:', error);
+                throw new Error('Failed to generate download URL');
+            }
+        });
+    }
+    deleteFile(key_1) {
+        return __awaiter(this, arguments, void 0, function* (key, isTextract = false) {
+            try {
+                const bucket = isTextract ? process.env.AWS_S3_TEXTRACT_BUCKET : process.env.AWS_S3_BUCKET;
+                const command = new client_s3_1.DeleteObjectCommand({
+                    Bucket: bucket,
+                    Key: key,
+                });
+                yield aws_config_1.s3Client.send(command);
             }
             catch (error) {
                 console.error('Error deleting from S3:', error);

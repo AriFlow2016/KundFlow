@@ -11,15 +11,26 @@ router.get('/', async (req: Request, res: Response) => {
     const dbState = mongoose.connection.readyState;
     const dbStatus = dbState === 1 ? 'connected' : 'disconnected';
 
-    // Kontrollera AWS S3-anslutning
-    let s3Status = 'unknown';
+    // Kontrollera AWS S3-anslutning för båda buckets
+    let documentsStatus = 'unknown';
+    let textractStatus = 'unknown';
+    
     try {
       await s3Client.send(new HeadBucketCommand({ 
         Bucket: process.env.AWS_S3_BUCKET || ''
       }));
-      s3Status = 'connected';
+      documentsStatus = 'connected';
     } catch (error) {
-      s3Status = 'error';
+      documentsStatus = 'error';
+    }
+
+    try {
+      await s3Client.send(new HeadBucketCommand({ 
+        Bucket: process.env.AWS_S3_TEXTRACT_BUCKET || ''
+      }));
+      textractStatus = 'connected';
+    } catch (error) {
+      textractStatus = 'error';
     }
 
     res.json({
@@ -27,7 +38,8 @@ router.get('/', async (req: Request, res: Response) => {
       timestamp: new Date().toISOString(),
       services: {
         database: dbStatus,
-        s3: s3Status
+        s3_documents: documentsStatus,
+        s3_textract: textractStatus
       }
     });
   } catch (error) {
