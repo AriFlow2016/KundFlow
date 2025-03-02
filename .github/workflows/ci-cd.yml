@@ -19,8 +19,15 @@ on:
       - 'package*.json'
 
 permissions:
-  contents: read
+  contents: write
   issues: write
+  pull-requests: write
+
+env:
+  NODE_VERSION: '20.x'
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: postgres
+  POSTGRES_DB: kundflow_test
 
 jobs:
   build-and-test:
@@ -31,9 +38,9 @@ jobs:
       postgres:
         image: postgres:latest
         env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: kundflow_test
+          POSTGRES_USER: ${{ env.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ env.POSTGRES_DB }}
         ports:
           - 5432:5432
         options: >-
@@ -46,37 +53,33 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
-        submodules: false
-        fetch-depth: 1
+        token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '20.x'
+        node-version: ${{ env.NODE_VERSION }}
         cache: 'npm'
 
     # Backend
     - name: Install Backend Dependencies
       id: backend-deps
-      run: |
-        cd backend
-        npm ci --legacy-peer-deps --no-audit
+      working-directory: ./backend
+      run: npm ci --legacy-peer-deps --no-audit
       
     - name: Generate Prisma Client
       id: prisma-generate
-      run: |
-        cd backend
-        npx prisma generate
+      working-directory: ./backend
+      run: npx prisma generate
       env:
-        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/kundflow_test
+        DATABASE_URL: postgresql://${{ env.POSTGRES_USER }}:${{ env.POSTGRES_PASSWORD }}@localhost:5432/${{ env.POSTGRES_DB }}
 
     - name: Run Backend Tests
       id: backend-tests
-      run: |
-        cd backend
-        npm run test
+      working-directory: ./backend
+      run: npm run test
       env:
-        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/kundflow_test
+        DATABASE_URL: postgresql://${{ env.POSTGRES_USER }}:${{ env.POSTGRES_PASSWORD }}@localhost:5432/${{ env.POSTGRES_DB }}
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         AWS_REGION: eu-north-1
@@ -87,78 +90,63 @@ jobs:
     - name: Build Backend
       id: backend-build
       if: success()
-      run: |
-        cd backend
-        npm run build
+      working-directory: ./backend
+      run: npm run build
 
     # Frontend
     - name: Install Frontend Dependencies
       id: frontend-deps
-      run: |
-        cd frontend
-        npm ci --legacy-peer-deps --no-audit
+      working-directory: ./frontend
+      run: npm ci --legacy-peer-deps --no-audit
 
     - name: Run Frontend Type Check
       id: frontend-typecheck
-      run: |
-        cd frontend
-        npm run type-check
+      working-directory: ./frontend
+      run: npm run type-check
 
     - name: Run Frontend Tests
       id: frontend-tests
-      run: |
-        cd frontend
-        npm run test
+      working-directory: ./frontend
+      run: npm run test
       env:
         VITE_API_URL: https://kundflow-backend.onrender.com
 
     - name: Build Frontend
       id: frontend-build
       if: success()
-      run: |
-        cd frontend
-        npm run build
+      working-directory: ./frontend
+      run: npm run build
       env:
         VITE_API_URL: https://kundflow-backend.onrender.com
 
-    # Notifications
-    - name: Notify on Failure
+    # Error Handling
+    - name: Create Error Issue
       if: failure()
       uses: actions/github-script@v7
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         script: |
           const { repo, owner } = context.repo;
-          const run_id = context.runId;
           
-          let failedStep = 'Unknown';
-          const stepOutcomes = {
-            'backend-deps': 'Backend Dependencies',
-            'prisma-generate': 'Prisma Client Generation',
-            'backend-tests': 'Backend Tests',
-            'backend-build': 'Backend Build',
-            'frontend-deps': 'Frontend Dependencies',
-            'frontend-typecheck': 'Frontend Type Check',
-            'frontend-tests': 'Frontend Tests',
-            'frontend-build': 'Frontend Build'
-          };
-          
-          for (const [stepId, stepName] of Object.entries(stepOutcomes)) {
-            if (context.payload.workflow_run.steps.find(s => s.name.includes(stepId))?.conclusion === 'failure') {
-              failedStep = stepName;
-              break;
+          const failedJobs = [];
+          if (jobs['build-and-test'].steps) {
+            for (const step of jobs['build-and-test'].steps) {
+              if (step.conclusion === 'failure') {
+                failedJobs.push(step.name);
+              }
             }
           }
-
-          const message = `❌ Pipeline failed in ${failedStep}
-          Repository: ${owner}/${repo}
-          Commit: ${context.sha}
-          See details: https://github.com/${owner}/${repo}/actions/runs/${run_id}`;
           
-          await github.rest.issues.create({
+          const failureMessage = failedJobs.length > 0
+            ? `Failed steps:\n${failedJobs.join('\n')}`
+            : 'Pipeline failed with unknown error';
+          
+          const issue = await github.rest.issues.create({
             owner,
             repo,
-            title: `Pipeline Failure: ${failedStep}`,
-            body: message,
+            title: `CI Pipeline Failure - ${new Date().toISOString()}`,
+            body: `Pipeline failed on commit ${context.sha}\n\n${failureMessage}\n\nSee run: ${context.runId}`,
             labels: ['ci-failure']
           });
+          
+          console.log(`Created issue #${issue.data.number}`);
