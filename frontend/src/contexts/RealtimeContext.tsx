@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import type { ReactNode } from 'react';
 
 interface ChartData {
   name: string;
@@ -98,11 +99,15 @@ export const RealtimeProvider = ({ children }: RealtimeProviderProps) => {
       }
     };
 
-    void loadInitialData();
+    loadInitialData().catch(err => {
+      console.error('Failed to load initial data:', err);
+    });
 
     // Uppdatera data var 30:e sekund
     const interval = setInterval(() => {
-      void loadInitialData();
+      loadInitialData().catch(err => {
+        console.error('Failed to update data:', err);
+      });
     }, 30000);
 
     return () => clearInterval(interval);
