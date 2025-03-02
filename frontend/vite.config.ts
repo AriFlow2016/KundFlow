@@ -5,7 +5,20 @@ export default defineConfig({
   plugins: [react()],
   build: {
     outDir: 'dist',
-    target: 'esnext',
-    minify: 'esbuild'
+    target: 'es2015',
+    minify: 'terser',
+    rollupOptions: {
+      external: ['react', 'react-dom'],
+      output: {
+        format: 'es',
+        globals: {
+          react: 'React',
+          'react-dom': 'ReactDOM'
+        }
+      }
+    }
+  },
+  optimizeDeps: {
+    include: ['react', 'react-dom']
   }
 });
