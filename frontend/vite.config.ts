@@ -7,6 +7,7 @@ export default defineConfig({
     outDir: 'dist',
     target: 'es2015',
     minify: 'terser',
+    sourcemap: true,
     rollupOptions: {
       external: ['react', 'react-dom'],
       output: {
@@ -14,11 +15,19 @@ export default defineConfig({
         globals: {
           react: 'React',
           'react-dom': 'ReactDOM'
+        },
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom']
         }
       }
     }
   },
   optimizeDeps: {
     include: ['react', 'react-dom']
+  },
+  resolve: {
+    alias: {
+      '@': '/src'
+    }
   }
 });
