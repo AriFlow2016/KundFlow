@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { type Customer } from '../types/customer';
-import { CustomerService } from '../services/customerService';
+import { customerService } from '../services/customerService';
 import { CustomerList } from '../components/customer/CustomerList';
 import { CustomerDetails } from '../components/customer/CustomerDetails';
 
@@ -13,7 +13,6 @@ export const Customers = () => {
   const loadCustomers = useCallback(async () => {
     try {
       setIsLoading(true);
-      const customerService = new CustomerService();
       const loadedCustomers = await customerService.getCustomers();
       setCustomers(loadedCustomers);
       setError(null);
@@ -35,7 +34,6 @@ export const Customers = () => {
 
   const handleCustomerUpdate = useCallback(async (updatedCustomer: Customer) => {
     try {
-      const customerService = new CustomerService();
       await customerService.updateCustomer(updatedCustomer);
       setCustomers(prevCustomers => 
         prevCustomers.map(c => c.id === updatedCustomer.id ? updatedCustomer : c)
