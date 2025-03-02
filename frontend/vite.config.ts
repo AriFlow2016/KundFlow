@@ -1,3 +1,5 @@
+/// <reference types="vite/client" />
+
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
@@ -6,11 +8,11 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     target: 'es2015',
-    minify: 'esbuild'
-  },
-  resolve: {
-    alias: {
-      '@': '/src'
+    minify: 'esbuild',
+    rollupOptions: {
+      input: {
+        main: './index.html'
+      }
     }
   }
 });
