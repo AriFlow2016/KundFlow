@@ -18,9 +18,14 @@ on:
       - 'prisma/**'
       - 'package*.json'
 
+permissions:
+  contents: read
+  issues: write
+
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     services:
       postgres:
@@ -38,7 +43,11 @@ jobs:
           --health-retries 5
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 2
+        persist-credentials: false
 
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -50,7 +59,7 @@ jobs:
     - name: Install Backend Dependencies
       run: |
         cd backend
-        npm ci --legacy-peer-deps
+        npm ci --legacy-peer-deps --no-audit
       continue-on-error: true
       id: backend-deps
       
@@ -60,7 +69,7 @@ jobs:
         cd backend
         rm -rf node_modules package-lock.json
         npm cache clean --force
-        npm ci --legacy-peer-deps
+        npm ci --legacy-peer-deps --no-audit
       
     - name: Generate Prisma Client
       run: |
@@ -93,7 +102,7 @@ jobs:
     - name: Install Frontend Dependencies
       run: |
         cd frontend
-        npm ci --legacy-peer-deps
+        npm ci --legacy-peer-deps --no-audit
       continue-on-error: true
       id: frontend-deps
 
@@ -103,7 +112,7 @@ jobs:
         cd frontend
         rm -rf node_modules package-lock.json
         npm cache clean --force
-        npm ci --legacy-peer-deps
+        npm ci --legacy-peer-deps --no-audit
 
     - name: Run Frontend Type Check
       run: |
@@ -131,6 +140,7 @@ jobs:
       if: failure()
       uses: actions/github-script@v7
       with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
         script: |
           const { repo, owner } = context.repo;
           const run_id = context.runId;
