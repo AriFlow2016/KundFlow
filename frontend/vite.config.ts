@@ -1,29 +1,35 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { nodeResolve } from '@rollup/plugin-node-resolve';
+import commonjs from '@rollup/plugin-commonjs';
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    {
+      ...nodeResolve({
+        preferBuiltins: true,
+        browser: true
+      }),
+      enforce: 'pre',
+      apply: 'build'
+    },
+    {
+      ...commonjs({
+        include: /node_modules/
+      }),
+      enforce: 'pre',
+      apply: 'build'
+    }
+  ],
   build: {
     outDir: 'dist',
     target: 'es2015',
-    minify: 'terser',
+    minify: 'esbuild',
     sourcemap: true,
-    rollupOptions: {
-      external: ['react', 'react-dom'],
-      output: {
-        format: 'es',
-        globals: {
-          react: 'React',
-          'react-dom': 'ReactDOM'
-        },
-        manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom']
-        }
-      }
+    commonjsOptions: {
+      transformMixedEsModules: true
     }
-  },
-  optimizeDeps: {
-    include: ['react', 'react-dom']
   },
   resolve: {
     alias: {
