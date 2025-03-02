@@ -9,6 +9,15 @@ import path from 'path';
 const app = express();
 const prisma = new PrismaClient();
 
+// Request logging middleware
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  console.log('Headers:', req.headers);
+  console.log('Query:', req.query);
+  console.log('Body:', req.body);
+  next();
+});
+
 // CORS configuration
 const corsOptions = {
   origin: process.env.CORS_ORIGIN || 'https://kundflow-frontend.onrender.com',
