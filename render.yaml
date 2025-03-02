@@ -3,9 +3,10 @@ services:
   - type: static
     name: kundflow-frontend
     buildCommand: |
-      npm install -g npm@latest
-      npm ci
-      npm run build:frontend
+      cd frontend
+      npm ci --legacy-peer-deps
+      npm run type-check
+      npm run build
     publishPath: frontend/dist
     envVars:
       - key: NODE_VERSION
@@ -27,10 +28,10 @@ services:
     name: kundflow-backend
     env: node
     buildCommand: |
-      npm install -g npm@latest
-      npm ci
-      npm run build:backend
-    startCommand: npm run start:backend
+      cd backend
+      npm ci --legacy-peer-deps
+      npm run build
+    startCommand: cd backend && npm run start
     envVars:
       - key: NODE_VERSION
         value: 20.x
