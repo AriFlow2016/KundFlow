@@ -1,0 +1,83 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Customer {
+  id               String    @id @default(cuid())
+  name             String
+  type             String    @default("COMPANY")
+  status           String    @default("PROSPECT")
+  organizationId   String?   @unique
+  website          String?
+  notes            String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  addresses        Address[]
+  contacts         Contact[]
+  industry         Industry?
+  tagsString       String    @default("[]") // Store tags as JSON string
+  documents        Document[]
+}
+
+model Address {
+  id          String   @id @default(cuid())
+  street      String
+  city        String
+  postalCode  String
+  country     String
+  type        String   @default("PRIMARY")
+  customerId  String
+  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([customerId])
+}
+
+model Contact {
+  id              String   @id @default(cuid())
+  firstName       String
+  lastName        String
+  title          String?
+  department     String?
+  phoneString    String   @default("[]") // Store phone numbers as JSON string
+  emailString    String   @default("[]") // Store email addresses as JSON string
+  isPrimary      Boolean  @default(false)
+  customerId     String
+  customer       Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([customerId])
+}
+
+model Industry {
+  id          String   @id @default(cuid())
+  name        String
+  code        String?
+  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customerId  String   @unique
+}
+
+model Document {
+  id          String   @id @default(cuid())
+  customerId  String
+  customer    Customer @relation(fields: [customerId], references: [id])
+  type        String
+  filename    String
+  url         String
+  mimeType    String
+  size        Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([customerId])
+}
