@@ -8,6 +8,8 @@ import { RealtimeProvider } from './contexts/RealtimeContext';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { ErrorBoundary, type FallbackProps } from 'react-error-boundary';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { SiteLogin } from './pages/SiteLogin';
 
 const ErrorFallback = ({ error, resetErrorBoundary }: FallbackProps): JSX.Element => (
   <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -32,15 +34,21 @@ const ErrorFallback = ({ error, resetErrorBoundary }: FallbackProps): JSX.Elemen
   </div>
 );
 
-export const App = (): JSX.Element => (
-  <ErrorBoundary
-    FallbackComponent={ErrorFallback}
-    onReset={() => {
-      window.location.reload();
-    }}
-  >
-    <RealtimeProvider>
-      <Router>
+function AppContent() {
+  const { isAuthenticated } = useAuth();
+
+  if (!isAuthenticated) {
+    return <SiteLogin />;
+  }
+
+  return (
+    <ErrorBoundary
+      FallbackComponent={ErrorFallback}
+      onReset={() => {
+        window.location.reload();
+      }}
+    >
+      <RealtimeProvider>
         <div className="min-h-screen bg-gray-100">
           <ToastContainer
             position="top-right"
@@ -107,7 +115,19 @@ export const App = (): JSX.Element => (
             </main>
           </div>
         </div>
+      </RealtimeProvider>
+    </ErrorBoundary>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <Router>
+        <AppContent />
       </Router>
-    </RealtimeProvider>
-  </ErrorBoundary>
-);
+    </AuthProvider>
+  );
+}
+
+export default App;
