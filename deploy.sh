@@ -1,11 +1,14 @@
 #!/bin/bash
 
-# Exit on error
-set -e
+# Exit on error and print each command
+set -ex
+
+# Navigate to project root
+cd "$(dirname "$0")"
 
 # Install dependencies and build frontend
 cd frontend
-npm install --production=false
+npm ci --production=false
 npm run build
 
 # The build output will be in frontend/dist
