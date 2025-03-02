@@ -7,8 +7,11 @@
     "backend"
   ],
   "scripts": {
-    "build:frontend": "cd frontend && npm install && npm run build",
-    "build:backend": "cd backend && npm install && npm run build",
+    "build:frontend": "cd frontend && npm ci && npm run build",
+    "build:backend": "cd backend && npm ci && npm run build",
     "start:backend": "cd backend && npm run start"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
   }
 }

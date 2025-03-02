@@ -4,8 +4,8 @@ services:
     name: kundflow-frontend
     buildCommand: |
       npm install -g npm@latest
-      chmod +x deploy.sh
-      ./deploy.sh
+      npm ci
+      npm run build:frontend
     publishPath: frontend/dist
     envVars:
       - key: NODE_VERSION
@@ -28,10 +28,9 @@ services:
     env: node
     buildCommand: |
       npm install -g npm@latest
-      cd backend
       npm ci
-      npm run build
-    startCommand: cd backend && npm run start
+      npm run build:backend
+    startCommand: npm run start:backend
     envVars:
       - key: NODE_VERSION
         value: 20.x
