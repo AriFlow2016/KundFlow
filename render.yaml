@@ -30,13 +30,16 @@ services:
     buildCommand: |
       cd backend
       npm ci --legacy-peer-deps
+      npx prisma generate
       npm run build
-    startCommand: cd backend && npm run start
+    startCommand: cd backend && npx prisma migrate deploy && npm run start
     envVars:
       - key: NODE_VERSION
         value: 20.x
       - key: DATABASE_URL
-        sync: false
+        fromDatabase:
+          name: kundflow-db
+          property: connectionString
       - key: AWS_ACCESS_KEY_ID
         sync: false
       - key: AWS_SECRET_ACCESS_KEY
@@ -53,8 +56,13 @@ services:
         value: 3000
       - key: CORS_ORIGIN
         value: https://kundflow-frontend.onrender.com
-    healthCheckPath: /api/health
+    healthCheckPath: /health
     autoDeploy: true
     buildFilter:
       paths:
         - backend/**
+
+databases:
+  - name: kundflow-db
+    plan: free
+    ipAllowList: []
