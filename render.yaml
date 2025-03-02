@@ -6,7 +6,7 @@ services:
     publishPath: frontend/dist
     envVars:
       - key: NODE_VERSION
-        value: 23.x
+        value: 20.x
       - key: VITE_API_URL
         value: https://kundflow-backend.onrender.com
         sync: false
@@ -27,7 +27,7 @@ services:
     startCommand: cd backend && npm run start
     envVars:
       - key: NODE_VERSION
-        value: 23.x
+        value: 20.x
       - key: DATABASE_URL
         sync: false
       - key: AWS_ACCESS_KEY_ID
