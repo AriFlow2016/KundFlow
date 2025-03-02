@@ -1,10 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import { PrismaClient } from '@prisma/client';
-import contractRoutes from './routes/contractRoutes';
 import customerRoutes from './routes/customerRoutes';
-import testRoutes from './routes/testRoutes';
-import healthRoutes from './routes/healthRoutes';
+import healthRoutes from './routes/health';
 import { errorHandler } from './middleware/error';
 import path from 'path';
 
@@ -48,9 +46,7 @@ app.get('/api/dbtest', async (req, res) => {
 });
 
 // Routes
-app.use('/api/contracts', contractRoutes);
 app.use('/api/customers', customerRoutes);
-app.use('/api/test', testRoutes);
 
 // Error handling
 app.use(errorHandler);
