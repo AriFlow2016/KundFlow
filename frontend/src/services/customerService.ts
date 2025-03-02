@@ -1,7 +1,8 @@
 import { type Customer } from '../types/customer';
+import { config } from '../config';
 
 export class CustomerService {
-  private readonly apiUrl = '/api/customers';
+  private readonly apiUrl = `${config.apiBaseUrl}/api/customers`;
 
   async getCustomers(): Promise<Customer[]> {
     try {
