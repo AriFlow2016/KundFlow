@@ -1,23 +1,26 @@
 import express from 'express';
 import cors from 'cors';
-import mongoose from 'mongoose';
+import { PrismaClient } from '@prisma/client';
 import contractRoutes from './routes/contractRoutes';
+import customerRoutes from './routes/customerRoutes';
 import testRoutes from './routes/testRoutes';
 import healthRoutes from './routes/healthRoutes';
 import { errorHandler } from './middleware/error';
 import path from 'path';
 
 const app = express();
+const prisma = new PrismaClient();
 
 // CORS configuration
 const corsOptions = {
-  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  origin: process.env.CORS_ORIGIN || 'https://kundflow-frontend.onrender.com',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  exposedHeaders: ['Content-Type', 'Authorization']
 };
 
-console.log('CORS Origin:', process.env.CORS_ORIGIN);
+console.log('Starting server with CORS Origin:', process.env.CORS_ORIGIN || 'https://kundflow-frontend.onrender.com');
 
 // Middleware
 app.use(cors(corsOptions));
@@ -27,17 +30,29 @@ app.use(express.urlencoded({ extended: true }));
 // Statiska filer
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
+// Health check endpoint
+app.use('/health', healthRoutes);
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Test database connection
+app.get('/api/dbtest', async (req, res) => {
+  try {
+    await prisma.$connect();
+    res.status(200).json({ status: 'Database connection successful' });
+  } catch (error) {
+    console.error('Database connection error:', error);
+    res.status(500).json({ error: 'Failed to connect to database' });
+  }
+});
+
 // Routes
 app.use('/api/contracts', contractRoutes);
+app.use('/api/customers', customerRoutes);
 app.use('/api/test', testRoutes);
-app.use('/api/health', healthRoutes);
 
 // Error handling
 app.use(errorHandler);
-
-// MongoDB connection
-mongoose.connect(process.env.DATABASE_URL || 'mongodb://localhost:27017/kundflow')
-  .then(() => console.log('Connected to MongoDB'))
-  .catch(err => console.error('MongoDB connection error:', err));
 
 export default app;
