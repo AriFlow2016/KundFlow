@@ -8,7 +8,14 @@ export default defineConfig(({ mode }) => {
   const apiUrl = env.VITE_API_URL || 'http://localhost:3000';
 
   return {
-    plugins: [react()],
+    plugins: [
+      react({
+        jsxRuntime: 'automatic',
+        babel: {
+          plugins: ['@babel/plugin-transform-react-jsx']
+        }
+      })
+    ],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),
@@ -26,24 +33,23 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       outDir: 'dist',
-      sourcemap: process.env.NODE_ENV !== 'production',
+      sourcemap: true,
+      commonjsOptions: {
+        include: [/node_modules/],
+        transformMixedEsModules: true
+      },
       rollupOptions: {
         output: {
           manualChunks: {
             vendor: ['react', 'react-dom', 'react-router-dom'],
             ui: ['@headlessui/react', '@heroicons/react'],
-            adminlte: ['admin-lte', 'jquery']
+            charts: ['react-chartjs-2', 'recharts']
           }
         }
-      },
-      chunkSizeWarningLimit: 1600,
-      target: 'es2018'
+      }
     },
     optimizeDeps: {
-      include: [
-        'jquery',
-        'admin-lte/dist/js/adminlte.min.js'
-      ],
+      include: ['react', 'react-dom', 'react-router-dom'],
       force: true
     }
   };
