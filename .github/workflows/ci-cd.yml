@@ -46,8 +46,8 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
-        fetch-depth: 2
-        persist-credentials: false
+        submodules: false
+        fetch-depth: 1
 
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -57,21 +57,13 @@ jobs:
 
     # Backend
     - name: Install Backend Dependencies
-      run: |
-        cd backend
-        npm ci --legacy-peer-deps --no-audit
-      continue-on-error: true
       id: backend-deps
-      
-    - name: Retry Backend Dependencies
-      if: steps.backend-deps.outcome == 'failure'
       run: |
         cd backend
-        rm -rf node_modules package-lock.json
-        npm cache clean --force
         npm ci --legacy-peer-deps --no-audit
       
     - name: Generate Prisma Client
+      id: prisma-generate
       run: |
         cd backend
         npx prisma generate
@@ -93,6 +85,7 @@ jobs:
         NODE_ENV: test
 
     - name: Build Backend
+      id: backend-build
       if: success()
       run: |
         cd backend
@@ -100,21 +93,13 @@ jobs:
 
     # Frontend
     - name: Install Frontend Dependencies
-      run: |
-        cd frontend
-        npm ci --legacy-peer-deps --no-audit
-      continue-on-error: true
       id: frontend-deps
-
-    - name: Retry Frontend Dependencies
-      if: steps.frontend-deps.outcome == 'failure'
       run: |
         cd frontend
-        rm -rf node_modules package-lock.json
-        npm cache clean --force
         npm ci --legacy-peer-deps --no-audit
 
     - name: Run Frontend Type Check
+      id: frontend-typecheck
       run: |
         cd frontend
         npm run type-check
@@ -128,6 +113,7 @@ jobs:
         VITE_API_URL: https://kundflow-backend.onrender.com
 
     - name: Build Frontend
+      id: frontend-build
       if: success()
       run: |
         cd frontend
@@ -145,10 +131,24 @@ jobs:
           const { repo, owner } = context.repo;
           const run_id = context.runId;
           
-          let failedStep = '';
-          if (steps['backend-tests'].outcome === 'failure') failedStep = 'Backend Tests';
-          else if (steps['frontend-tests'].outcome === 'failure') failedStep = 'Frontend Tests';
-          else failedStep = 'Build Process';
+          let failedStep = 'Unknown';
+          const stepOutcomes = {
+            'backend-deps': 'Backend Dependencies',
+            'prisma-generate': 'Prisma Client Generation',
+            'backend-tests': 'Backend Tests',
+            'backend-build': 'Backend Build',
+            'frontend-deps': 'Frontend Dependencies',
+            'frontend-typecheck': 'Frontend Type Check',
+            'frontend-tests': 'Frontend Tests',
+            'frontend-build': 'Frontend Build'
+          };
+          
+          for (const [stepId, stepName] of Object.entries(stepOutcomes)) {
+            if (context.payload.workflow_run.steps.find(s => s.name.includes(stepId))?.conclusion === 'failure') {
+              failedStep = stepName;
+              break;
+            }
+          }
 
           const message = `❌ Pipeline failed in ${failedStep}
           Repository: ${owner}/${repo}
