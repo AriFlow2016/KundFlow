@@ -80,13 +80,6 @@ Då vi är fokuserade på telefoni i den svenska marknaden vill vi erbjuda effek
 - **NIX-registret**  
   - Inbyggd kontroll mot NIX för att inte ringa privata nummer som är spärrade för marknadsföring.
 
-### 3.3 Inspelning och transkribering (om juridiskt möjligt)
-
-- **Samtalsinspelning**  
-  - Spela in samtal för kvalitetskontroll eller dokumentation. Kräver samtycke och efterlevnad av GDPR.  
-- **Tal-till-text**  
-  - Möjlighet att automatiskt transkribera samtal för sökbarhet och enklare uppföljning.
-
 ---
 
 ## 4. Användargränssnitt och designprinciper

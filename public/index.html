@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KundFlow</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header>
+    <nav>
+      <div class="logo">KundFlow</div>
+      <ul class="nav-links">
+        <li><a href="#" class="active">Hem</a></li>
+        <li><a href="#kunder">Kunder</a></li>
+        <li><a href="#projekt">Projekt</a></li>
+        <li><a href="#kontakt">Kontakt</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <section id="dashboard">
+      <h1>Välkommen till KundFlow</h1>
+      <p>Hantera dina kunder och projekt enkelt och effektivt.</p>
+      
+      <div class="dashboard-cards">
+        <div class="card">
+          <h3>Kunder</h3>
+          <p>Hantera dina kundkontakter</p>
+          <button id="visa-kunder">Visa kunder</button>
+        </div>
+        <div class="card">
+          <h3>Projekt</h3>
+          <p>Följ upp dina projekt</p>
+          <button id="visa-projekt">Visa projekt</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="kund-lista" class="hidden">
+      <h2>Kundlista</h2>
+      <button id="lägg-till-kund">Lägg till ny kund</button>
+      <div id="kunder-container"></div>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2023 KundFlow</p>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>

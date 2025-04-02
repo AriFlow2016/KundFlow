@@ -1,0 +1,47 @@
+========================
+STARTA KUNDFLOW
+========================
+
+För att starta KundFlow demo-servern, följ dessa enkla steg:
+
+1. Öppna terminalen på din Mac
+
+2. Kopiera och klistra in följande kommando:
+   
+   cd /Users/johannilsson/KundFlow && node start.js
+
+3. Öppna webbläsaren och gå till adressen:
+   
+   http://localhost:3000
+
+Detta kommer visa en enkel demo av KundFlow-applikationen.
+
+========================
+FELSÖKNING
+========================
+
+Om du får felmeddelanden:
+
+1. Kontrollera att du är i rätt katalog:
+   
+   pwd
+   
+   (Du bör se /Users/johannilsson/KundFlow)
+
+2. Kontrollera att Node.js är installerat:
+   
+   node --version
+   
+   (Om du får "command not found", installera Node.js från https://nodejs.org/)
+
+3. Om filen start.js inte hittas, kontrollera att den faktiskt finns:
+   
+   ls -la
+   
+   (Du bör se start.js i listan)
+
+4. Port 3000 används av en annan applikation, prova:
+   
+   NODE_PORT=3001 node start.js
+   
+   (Och använd http://localhost:3001 istället)
